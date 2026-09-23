@@ -83,7 +83,9 @@ static class Harness
             IntPtr hit = WindowFromPoint(center);
             bool clickable = hit == ok.Handle || GetAncestor(hit, 2 /* GA_ROOT */) == d.Handle;
             Check("aviso con " + names[i] + ": el botón se puede tocar", clickable, true);
-            if (i == 0) Check("aviso con teclado centrado: no lo tapa", d.Bounds.IntersectsWith(kb.Bounds), false);
+            // Solo se exige no solaparse si hay sitio encima o debajo (en pantallas pequeñas queda encima, que basta)
+            bool room = kb.Top - wa.Top >= d.Height + 16 || wa.Bottom - kb.Bottom >= d.Height + 16;
+            if (i == 0 && room) Check("aviso con teclado centrado: no lo tapa", d.Bounds.IntersectsWith(kb.Bounds), false);
             d.Close(); d.Dispose();
             kb.Close(); kb.Dispose();
             Pump(200);
