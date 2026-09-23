@@ -49,6 +49,7 @@ namespace TecladoFlotante
         bool numLock = true;
         bool showNumpad = true;
         bool showFnRow = true;
+        bool boldText;
         string pending; // tecla muerta pendiente (´ ` ^ ¨)
 
         // Geometría
@@ -122,6 +123,15 @@ namespace TecladoFlotante
                 Invalidate();
             }
         }
+
+        /// <summary>Letras de las teclas en negrita (se leen mejor).</summary>
+        public bool BoldText
+        {
+            get { return boldText; }
+            set { boldText = value; Invalidate(); }
+        }
+
+        FontStyle TextStyle { get { return boldText ? FontStyle.Bold : FontStyle.Regular; } }
 
         public string LayoutId
         {
@@ -712,13 +722,13 @@ namespace TecladoFlotante
                     string alternate = shift ? k.Normal : k.Shifted;
                     if (alternate != output)
                     {
-                        Font sf = fonts.Get(Theme.TextFamily, sub, FontStyle.Regular);
+                        Font sf = fonts.Get(Theme.TextFamily, sub, TextStyle);
                         g.DrawString(alternate, sf, subText, r.X + r.Width * 0.08f, r.Y + r.Height * 0.04f);
                     }
                 }
                 if (k.AltGr != null && !altGr)
                 {
-                    Font af = fonts.Get(Theme.TextFamily, sub, FontStyle.Regular);
+                    Font af = fonts.Get(Theme.TextFamily, sub, TextStyle);
                     SizeF sz = g.MeasureString(k.AltGr, af);
                     g.DrawString(k.AltGr, af, altText, r.Right - sz.Width - r.Width * 0.06f, r.Bottom - sz.Height - r.Height * 0.02f);
                 }
@@ -728,10 +738,11 @@ namespace TecladoFlotante
         void DrawFitted(Graphics g, string s, string family, float px, Brush brush, RectangleF r)
         {
             if (string.IsNullOrEmpty(s)) return;
-            Font f = fonts.Get(family, px, FontStyle.Regular);
+            FontStyle style = family == Theme.TextFamily ? TextStyle : FontStyle.Regular; // los iconos no tienen negrita
+            Font f = fonts.Get(family, px, style);
             SizeF sz = g.MeasureString(s, f);
             float max = r.Width * 0.9f;
-            if (sz.Width > max) f = fonts.Get(family, px * max / sz.Width, FontStyle.Regular);
+            if (sz.Width > max) f = fonts.Get(family, px * max / sz.Width, style);
             g.DrawString(s, f, brush, r, center);
         }
 

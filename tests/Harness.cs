@@ -176,6 +176,10 @@ static class Harness
         kb.ShowFnRow = false; Save(kb, dir + "\\light-nofn.png"); kb.ShowFnRow = true;
         Theme.Apply(Theme.Dark); kb.ApplyTheme();
 
+        kb.BoldText = true; Save(kb, dir + "\\bold-" + DateTime.Now.Ticks + ".png");
+        Theme.Apply(Theme.Light); kb.ApplyTheme(); Save(kb, dir + "\\bold-light-" + DateTime.Now.Ticks + ".png");
+        Theme.Apply(Theme.Dark); kb.ApplyTheme(); kb.BoldText = false;
+
         // Novedades para tablet: botón «Actualizar», diálogo y menús grandes
         kb.UpdateLabel = "Actualizar"; Save(kb, dir + "\\update-button.png"); kb.UpdateLabel = null;
         foreach (string mode in new[] { Theme.Dark, Theme.Light })

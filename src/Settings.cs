@@ -29,6 +29,7 @@ namespace TecladoFlotante
         public bool AutoShow;                                    // mostrar al tocar un campo de texto
         public string StartupMode = StartupHidden;               // qué se ve al encender el PC
         public bool TrayPromoted;                                // ya se pidió a Windows mostrar el icono
+        public bool BoldText;                                    // letras de las teclas en negrita
 
         public const string StartupHidden = "hidden", StartupBubble = "bubble", StartupKeyboard = "keyboard";
         public string SkippedVersion = "";
@@ -90,6 +91,7 @@ namespace TecladoFlotante
             if (d.TryGetValue("StartupMode", out startup) &&
                 (startup == StartupHidden || startup == StartupBubble || startup == StartupKeyboard)) s.StartupMode = startup;
             s.TrayPromoted = Int(d, "TrayPromoted", 0) != 0;
+            s.BoldText = Int(d, "BoldText", 0) != 0;
             string skipped;
             if (d.TryGetValue("SkippedVersion", out skipped)) s.SkippedVersion = skipped;
             s.Running = Int(d, "Running", 0) != 0;
@@ -120,6 +122,7 @@ namespace TecladoFlotante
                     "AutoShow=" + B(AutoShow),
                     "StartupMode=" + StartupMode,
                     "TrayPromoted=" + B(TrayPromoted),
+                    "BoldText=" + B(BoldText),
                     "SkippedVersion=" + SkippedVersion,
                     "Running=" + B(Running),
                 };

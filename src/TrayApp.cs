@@ -22,7 +22,7 @@ namespace TecladoFlotante
         readonly EventWaitHandle showEvent, quitEvent;
         readonly System.Windows.Forms.Timer updateTimer = new System.Windows.Forms.Timer();
         readonly AutoShow autoShow;
-        ToolStripMenuItem miTheme, miAutoShow, miStartup;
+        ToolStripMenuItem miTheme, miBold, miAutoShow, miStartup;
         ToolStripMenuItem miUpdate, miToggle, miTopMost, miNumpad, miFnRow, miBubble, miRemember, miAutostart, miAutoUpdate, miOpacity, miLayout, miCheckNow;
         ReleaseInfo availableUpdate;
         bool updating, hotkeyOk, exiting;
@@ -44,6 +44,7 @@ namespace TecladoFlotante
             kb.Bounds = StartBounds(crashed || recovered);
             kb.KeyboardTopMost = settings.TopMost;
             kb.Opacity = settings.Opacity / 100.0;
+            kb.BoldText = settings.BoldText;
             IntPtr h = kb.Handle; // crea la ventana (oculta) para poder recibir el atajo global
             hotkeyOk = Native.RegisterHotKey(h, HotkeyId, Native.MOD_CONTROL | Native.MOD_ALT | Native.MOD_NOREPEAT, (uint)Keys.K);
             if (!hotkeyOk) Log.Info("Ctrl+Alt+K está ocupado por otro programa");
@@ -406,6 +407,13 @@ namespace TecladoFlotante
                 miTheme.DropDownItems.Add(item);
             }
 
+            miBold = new ToolStripMenuItem("Letra en negrita", null, delegate
+            {
+                kb.BoldText = !kb.BoldText;
+                settings.BoldText = kb.BoldText;
+                settings.Save();
+            });
+
             miAutoShow = new ToolStripMenuItem("Mostrar al tocar un campo de texto", null, delegate
             {
                 settings.AutoShow = !settings.AutoShow;
@@ -488,7 +496,7 @@ namespace TecladoFlotante
             m.Items.AddRange(new ToolStripItem[]
             {
                 miUpdate, miToggle, new ToolStripSeparator(),
-                miLayout, miNumpad, miFnRow, miTheme, miAutoShow, miSettings, miHelp,
+                miLayout, miNumpad, miFnRow, miTheme, miBold, miAutoShow, miSettings, miHelp,
                 new ToolStripSeparator(), miExit,
             });
 
@@ -501,6 +509,7 @@ namespace TecladoFlotante
                 miFnRow.Checked = kb.ShowFnRow;
                 foreach (ToolStripMenuItem i in miTheme.DropDownItems) i.Checked = (string)i.Tag == settings.ThemeMode;
                 miAutoShow.Checked = settings.AutoShow && autoShow.Enabled;
+                miBold.Checked = kb.BoldText;
                 foreach (ToolStripMenuItem i in miStartup.DropDownItems) i.Checked = (string)i.Tag == settings.StartupMode;
                 miTopMost.Checked = kb.KeyboardTopMost;
                 miBubble.Checked = settings.Bubble;

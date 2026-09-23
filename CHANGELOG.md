@@ -2,6 +2,11 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según [SemVer](https://semver.org/lang/es/).
 
+## [1.3.3] - 2026-09-23
+
+### Añadido
+- Opción **Letra en negrita** en el menú, para leer mejor las teclas.
+
 ## [1.3.2] - 2026-09-23
 
 Para que en una tablet (sin teclado físico) siempre se encuentre el teclado.
