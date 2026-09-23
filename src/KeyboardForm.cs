@@ -279,17 +279,22 @@ namespace TecladoFlotante
             float gap = Math.Max(2f, Math.Min(unitW, unitH) * 0.075f);
             foreach (KeyDef k in Keys)
             {
-                if ((k.Numpad && !showNumpad) || (k.Row == 0 && !showFnRow)) { k.Rect = RectangleF.Empty; continue; }
-                float y = content.Y + KeyLayout.RowTop(k.Row, showFnRow) * unitH;
-                k.Rect = new RectangleF(content.X + k.X * unitW + gap / 2, y + gap / 2,
-                                        k.W * unitW - gap, KeyLayout.RowHeight(k) * unitH - gap);
-            }
-            if (!showFnRow)
-            {
-                // Sin fila de funciones, Esc pasa a la izquierda de la barra superior para no perderlo
-                KeyDef esc = Keys.Find(k => k.Id == "Esc");
-                if (esc != null)
-                    esc.Rect = new RectangleF(strip.X, strip.Y + 1, Math.Min(strip.Height * 2.4f, strip.Width * 0.12f), strip.Height - 2);
+                int row = k.Row;
+                float kx = k.X, kw = k.W, kh = KeyLayout.RowHeight(k);
+                if (!showFnRow && !k.Numpad)
+                {
+                    // Sin fila de funciones, Esc pasa a la izquierda de la fila de números (tamaño normal):
+                    // las 13 teclas de esa fila se estrechan un 4 % y Borrar queda de 1,5 unidades.
+                    if (k.Id == "Esc") { row = 1; kx = 0; kw = 1; kh = 1; }
+                    else if (k.Row == 1)
+                    {
+                        if (k.Id == "Back") { kx = 13.5f; kw = 1.5f; }
+                        else { kx = 1 + k.X * 12.5f / 13f; kw = k.W * 12.5f / 13f; }
+                    }
+                }
+                if ((k.Numpad && !showNumpad) || (row == 0 && !showFnRow)) { k.Rect = RectangleF.Empty; continue; }
+                float y = content.Y + KeyLayout.RowTop(row, showFnRow) * unitH;
+                k.Rect = new RectangleF(content.X + kx * unitW + gap / 2, y + gap / 2, kw * unitW - gap, kh * unitH - gap);
             }
         }
 
@@ -674,7 +679,7 @@ namespace TecladoFlotante
             using (SolidBrush b = new SolidBrush(fill))
                 g.FillPath(b, p);
 
-            float main = unitH * (k.Row == 0 ? 0.30f : 0.40f);
+            float main = unitH * (k.Row == 0 && showFnRow ? 0.30f : 0.40f);
             float sub = unitH * 0.23f;
             using (SolidBrush text = new SolidBrush(k == pressed ? Theme.OnAccent : Theme.Text))
             using (SolidBrush subText = new SolidBrush(Theme.SubText))

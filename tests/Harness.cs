@@ -146,6 +146,21 @@ static class Harness
         Check("sustituir un .exe en ejecución: contenido nuevo", System.IO.File.ReadAllBytes(running).Length, 5);
         try { busy.Kill(); busy.WaitForExit(3000); } catch { }
 
+        // Sin fila de funciones: Esc en la fila de números, del tamaño de una tecla normal
+        foreach (string id in KeyLayout.Ids)
+        {
+            KeyboardForm k2 = new KeyboardForm();
+            k2.Bounds = new Rectangle(0, 0, 1200, 380);
+            k2.LayoutId = id;
+            k2.ShowFnRow = false;
+            RectangleF e = k2.Keys.First(k => k.Id == "Esc").Rect, one = k2.Keys.First(k => k.Id == "1").Rect;
+            RectangleF back = k2.Keys.First(k => k.Id == "Back").Rect, first = k2.Keys.First(k => k.Row == 1 && k.X == 0 && !k.Numpad).Rect;
+            Check("sin F (" + id + "): Esc en la fila de números", Math.Abs(e.Top - one.Top) < 1 && e.Right <= first.Left + 1, true);
+            Check("sin F (" + id + "): Esc de tamaño normal", Math.Abs(e.Height - one.Height) < 1 && e.Width >= one.Width - 1, true);
+            Check("sin F (" + id + "): Borrar sigue en la fila y sin solaparse", back.Left >= k2.Keys.First(k => k.Id == (id == "es" ? "¡" : "=")).Rect.Right - 1, true);
+            k2.Dispose();
+        }
+
         Check("Unicode de ES correcto (ñ)", KeyLayout.Build("es").Keys.Any(k => k.Id == "ñ"), true);
         Check("EE. UU. sin teclas muertas", KeyLayout.Build("us").DeadKeys.Count, 0);
         return failures - before;
@@ -384,7 +399,9 @@ static class Harness
         Check("sin fila de funciones las teclas mantienen su alto", Math.Abs(Find(kb, "a").Rect.Height - keyH) <= keyH * 0.04f, true);
         Check("F1 oculta", Find(kb, "F1").Rect.IsEmpty, true);
         RectangleF escR = Find(kb, "Esc").Rect;
-        Check("Esc sigue disponible en la barra superior", !escR.IsEmpty && escR.Bottom < Find(kb, "1").Rect.Top, true);
+        RectangleF oneR = Find(kb, "1").Rect;
+        Check("Esc pasa a la fila de los números", !escR.IsEmpty && Math.Abs(escR.Top - oneR.Top) < 1 && escR.Right <= Find(kb, "º").Rect.Left, true);
+        Check("Esc tiene el tamaño de una tecla normal", Math.Abs(escR.Height - oneR.Height) < 1 && escR.Width >= oneR.Width, true);
         Tap(kb, "Esc");
         Check("pulsar Esc no rompe nada", box.Text, "z7+3.5/*1@`a\\\"ñ-");
         kb.ShowFnRow = true; Pump(100);
