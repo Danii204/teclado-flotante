@@ -1,5 +1,7 @@
 # Teclado Flotante
 
+> 🧪 **Beta abierta.** Ya se puede usar a diario, pero puede tener fallos. Si encuentras alguno, [abre un issue](https://github.com/Danii204/teclado-flotante/issues) contando qué hacías y, si puedes, adjunta el registro `%APPDATA%\TecladoFlotante\log.txt`.
+
 Teclado en pantalla para Windows 10 y 11, pensado para sustituir a los que trae Windows: se coloca en **cualquier parte de la pantalla** (también arriba del todo), se **redimensiona libremente**, ocupa lo mínimo en marcos y **nunca roba el foco** a la aplicación en la que estás escribiendo.
 
 ![Teclado Flotante, tema oscuro](docs/captura.png)
@@ -7,7 +9,7 @@ Teclado en pantalla para Windows 10 y 11, pensado para sustituir a los que trae 
 
 ## Descarga
 
-**[⬇ Descargar TecladoFlotante-Setup.exe](https://github.com/Danii204/teclado-flotante/releases/latest/download/TecladoFlotante-Setup.exe)** (≈ 70 KB, no necesita permisos de administrador)
+**[⬇ Descargar la última versión](https://github.com/Danii204/teclado-flotante/releases)**: en la versión más reciente, descarga `TecladoFlotante-Setup.exe` (≈ 80 KB, no necesita permisos de administrador).
 
 1. Abre `TecladoFlotante-Setup.exe` y pulsa **Aceptar**.
 2. Si Windows muestra *«Windows protegió su PC»*, pulsa **Más información → Ejecutar de todas formas**. Aparece porque el programa no está firmado con un certificado de pago; el código es este mismo repositorio y cada versión publica su huella SHA-256.
@@ -41,7 +43,7 @@ Se instala solo para tu usuario, se abre al terminar y, a partir de entonces, ar
 
 ## Actualizaciones
 
-El programa comprueba cada 12 horas si hay una versión nueva en [Releases](https://github.com/Danii204/teclado-flotante/releases). Si la hay, avisa en la bandeja: **un clic** y se descarga, se verifica (SHA-256), se instala y vuelve a abrirse solo. También se puede comprobar a mano desde *Ayuda y actualizaciones → Buscar actualizaciones ahora*, o desactivar el aviso.
+El programa comprueba cada 12 horas si hay una versión nueva en [Releases](https://github.com/Danii204/teclado-flotante/releases) (durante la beta abierta, también las marcadas como *Pre-release*). Si la hay, avisa en la bandeja: **un clic** y se descarga, se verifica (SHA-256), se instala y vuelve a abrirse solo. También se puede comprobar a mano desde *Ayuda y actualizaciones → Buscar actualizaciones ahora*, o desactivar el aviso.
 
 ## Privacidad
 
@@ -82,7 +84,7 @@ Estructura: `src/` código de la aplicación, `tests/` banco de pruebas, `.githu
 ### Publicar una versión
 
 1. Añade en `CHANGELOG.md` la sección `## [X.Y.Z] - AAAA-MM-DD`.
-2. Ejecuta `.\release.ps1 X.Y.Z`.
+2. Ejecuta `.\release.ps1 X.Y.Z`. Mientras el archivo `CHANNEL` diga `beta`, se publica como *Pre-release* con la etiqueta `vX.Y.Z-beta`; cámbialo a `stable` para la primera versión estable.
 
 GitHub Actions compila, prueba y crea la Release con el instalador y su SHA-256; los equipos con el programa instalado recibirán el aviso.
 

@@ -30,7 +30,7 @@ namespace TecladoFlotante
             get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), AppName + ".lnk"); }
         }
 
-        static string Version { get { return BuildInfo.Version; } }
+        static string Version { get { return BuildInfo.DisplayVersion; } }
 
         /// <param name="silent">Sin diálogos.</param>
         /// <param name="relaunch">Tras instalar, abrir la app (siempre en instalación normal; en actualización automática, también).</param>

@@ -67,7 +67,7 @@ namespace TecladoFlotante
             menu = BuildMenu();
             tray = new NotifyIcon();
             tray.Icon = IconArt.CreateIcon(SystemInformation.SmallIconSize.Width);
-            tray.Text = "Teclado Flotante " + BuildInfo.Version + (hotkeyOk ? " (Ctrl+Alt+K)" : "");
+            tray.Text = "Teclado Flotante " + BuildInfo.DisplayVersion + (hotkeyOk ? " (Ctrl+Alt+K)" : "");
             tray.ContextMenuStrip = menu;
             tray.MouseClick += (s, e) => { if (e.Button == MouseButtons.Left) Toggle(); };
             tray.BalloonTipClicked += delegate { if (availableUpdate != null) PromptUpdate(); };
@@ -89,7 +89,7 @@ namespace TecladoFlotante
             if (Updater.Enabled) updateTimer.Start();
 
             if (!startHidden) ShowKeyboard();
-            if (updated) Balloon("Teclado Flotante actualizado", "Ya tienes la versión " + BuildInfo.Version + ".", ToolTipIcon.Info);
+            if (updated) Balloon("Teclado Flotante actualizado", "Ya tienes la versión " + BuildInfo.DisplayVersion + ".", ToolTipIcon.Info);
             else if (recovered) Balloon("Teclado Flotante", "Se ha vuelto a abrir tras un error inesperado.", ToolTipIcon.Warning);
             else if (!hotkeyOk && !startHidden)
                 Balloon("Atajo no disponible", "Otro programa usa Ctrl+Alt+K. Usa el icono de la bandeja para mostrar el teclado.", ToolTipIcon.Warning);
@@ -254,7 +254,7 @@ namespace TecladoFlotante
             }
             if (!Updater.IsNewer(r))
             {
-                if (manual) MessageBox.Show("Tienes la última versión (" + BuildInfo.Version + ").", Installer.AppName,
+                if (manual) MessageBox.Show("Tienes la última versión (" + BuildInfo.DisplayVersion + ").", Installer.AppName,
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -272,7 +272,7 @@ namespace TecladoFlotante
             ReleaseInfo r = availableUpdate;
             if (r == null || updating) return;
             DialogResult answer = MessageBox.Show(
-                "Hay una nueva versión de Teclado Flotante: " + r.Version + " (tienes la " + BuildInfo.Version + ").\n\n" +
+                "Hay una nueva versión de Teclado Flotante: " + r.Version + " (tienes la " + BuildInfo.DisplayVersion + ").\n\n" +
                 "El teclado se cerrará un momento y volverá a abrirse solo.\n\n¿Actualizar ahora?\n\n" +
                 "(«No» = recordármelo más tarde · «Cancelar» = no avisar de esta versión)",
                 Installer.AppName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
@@ -454,8 +454,10 @@ namespace TecladoFlotante
 
         void ShowAbout()
         {
-            string text = "Teclado Flotante " + BuildInfo.Version + "\n" +
+            string text = "Teclado Flotante " + BuildInfo.DisplayVersion + "\n" +
                           "Teclado en pantalla flotante para Windows.\n\n" +
+                          (BuildInfo.IsBeta && BuildInfo.ProjectUrl.Length > 0
+                              ? "Beta abierta: si encuentras un fallo, cuéntalo en " + BuildInfo.ProjectUrl + "/issues\n\n" : "") +
                           (string.IsNullOrEmpty(BuildInfo.Author) ? "" : "Autor: " + BuildInfo.Author + "\n") +
                           (string.IsNullOrEmpty(BuildInfo.ProjectUrl) ? "" : BuildInfo.ProjectUrl + "\n") +
                           "\nNo recopila ni envía ningún dato. Solo consulta GitHub para buscar nuevas versiones.\n" +

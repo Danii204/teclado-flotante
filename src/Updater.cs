@@ -38,27 +38,57 @@ namespace TecladoFlotante
             catch (NotSupportedException) { ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12; }
         }
 
-        /// <summary>Última versión publicada, o null si no hay ninguna utilizable. Lanza excepción si falla la red.</summary>
+        /// <summary>
+        /// Versión más alta publicada, o null si no hay ninguna utilizable. Lanza excepción si falla la red.
+        /// Las compilaciones del canal beta también tienen en cuenta las «Pre-release»; las estables, no.
+        /// </summary>
         public static ReleaseInfo GetLatest()
         {
             if (!Enabled) return null;
             string json;
-            try { json = GetString("https://api.github.com/repos/" + BuildInfo.Repo + "/releases/latest", "application/vnd.github+json"); }
+            try { json = GetString("https://api.github.com/repos/" + BuildInfo.Repo + "/releases?per_page=30", "application/vnd.github+json"); }
             catch (WebException ex)
             {
-                // 404: todavía no hay ninguna versión publicada (o el repositorio no es público)
+                // 404: el repositorio no existe o no es público
                 HttpWebResponse resp = ex.Response as HttpWebResponse;
                 if (resp != null && resp.StatusCode == HttpStatusCode.NotFound) return null;
                 throw;
             }
-            Dictionary<string, object> o = new JavaScriptSerializer().DeserializeObject(json) as Dictionary<string, object>;
-            if (o == null) return null;
+            object[] releases = new JavaScriptSerializer().DeserializeObject(json) as object[];
+            if (releases == null) return null;
 
-            string tag = o.ContainsKey("tag_name") ? o["tag_name"] as string : null;
+            Dictionary<string, object> best = null;
+            Version bestVersion = null;
+            foreach (object item in releases)
+            {
+                Dictionary<string, object> rel = item as Dictionary<string, object>;
+                if (rel == null || IsTrue(rel, "draft")) continue;
+                if (IsTrue(rel, "prerelease") && !BuildInfo.IsBeta) continue;
+                Version rv = ParseTag(rel.ContainsKey("tag_name") ? rel["tag_name"] as string : null);
+                if (rv != null && (bestVersion == null || rv > bestVersion)) { best = rel; bestVersion = rv; }
+            }
+            return best == null ? null : ToReleaseInfo(best, bestVersion);
+        }
+
+        static bool IsTrue(Dictionary<string, object> o, string key)
+        {
+            return o.ContainsKey(key) && o[key] is bool && (bool)o[key];
+        }
+
+        /// <summary>"v1.2.0" o "v1.2.0-beta" → 1.2.0 (el sufijo solo es informativo).</summary>
+        static Version ParseTag(string tag)
+        {
+            if (tag == null) return null;
+            string s = tag.TrimStart('v', 'V');
+            int dash = s.IndexOf('-');
+            if (dash >= 0) s = s.Substring(0, dash);
             Version v;
-            if (tag == null || !Version.TryParse(tag.TrimStart('v', 'V'), out v)) return null;
+            return Version.TryParse(s, out v) ? v : null;
+        }
 
-            ReleaseInfo r = new ReleaseInfo { Version = v, Tag = tag, PageUrl = o["html_url"] as string };
+        static ReleaseInfo ToReleaseInfo(Dictionary<string, object> o, Version v)
+        {
+            ReleaseInfo r = new ReleaseInfo { Version = v, Tag = o["tag_name"] as string, PageUrl = o["html_url"] as string };
             string shaUrl = null;
             object[] assets = o.ContainsKey("assets") ? o["assets"] as object[] : null;
             if (assets != null)

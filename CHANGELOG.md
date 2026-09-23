@@ -4,6 +4,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [1.2.0] - 2026-09-23
 
+Primera versión publicada, como **beta abierta**.
+
 ### Añadido
 - Tema claro, además del oscuro, y modo automático que sigue al tema de Windows (menú → Tema).
 - Opción «Mostrar al tocar un campo de texto»: al hacer clic o tocar donde se puede escribir, el teclado aparece si estaba oculto.

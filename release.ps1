@@ -1,4 +1,5 @@
-﻿# Publica una nueva versión: actualiza VERSION, crea el commit y la etiqueta vX.Y.Z y lo sube a GitHub.
+﻿# Publica una nueva versión: actualiza VERSION, crea el commit y la etiqueta vX.Y.Z (vX.Y.Z-beta si el
+# archivo CHANNEL dice "beta") y lo sube a GitHub. Las betas se publican como «Pre-release».
 # GitHub Actions compila, prueba y crea la Release; las copias instaladas avisan de la actualización.
 #
 #   .\release.ps1 1.2.0
@@ -11,7 +12,9 @@ Set-Location $PSScriptRoot
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Formato de versión no válido: $Version (usa X.Y.Z)" }
 $current = (Get-Content VERSION -Raw).Trim()
 if ([version]$Version -le [version]$current -and $Version -ne $current) { throw "La versión $Version no es mayor que la actual ($current)" }
-if (git tag --list "v$Version") { throw "La etiqueta v$Version ya existe" }
+$channel = if (Test-Path CHANNEL) { (Get-Content CHANNEL -Raw).Trim() } else { 'stable' }
+$tag = if ($channel -eq 'beta') { "v$Version-beta" } else { "v$Version" }
+if (git tag --list $tag) { throw "La etiqueta $tag ya existe" }
 if (-not (Select-String -Path CHANGELOG.md -Pattern "^## \[?$([regex]::Escape($Version))\]?" -Quiet)) {
     throw "Falta la sección '## [$Version]' en CHANGELOG.md"
 }
@@ -26,6 +29,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Las pruebas han fallado: no se publica' }
 Set-Content VERSION $Version -Encoding ascii -NoNewline
 git add -A
 if (git status --porcelain) { git commit -m "Versión $Version" }
-git tag -a "v$Version" -m "Teclado Flotante $Version"
+git tag -a $tag -m "Teclado Flotante $Version ($channel)"
 git push origin main --follow-tags
-Write-Host "Publicada la etiqueta v$Version. GitHub Actions creará la Release en unos minutos."
+Write-Host "Publicada la etiqueta $tag. GitHub Actions creará la Release en unos minutos."

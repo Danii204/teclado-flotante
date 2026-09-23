@@ -17,6 +17,10 @@ New-Item -ItemType Directory -Force $obj, $dist | Out-Null
 
 if (-not $Version) { $Version = (Get-Content (Join-Path $root 'VERSION') -Raw).Trim() }
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Version no valida: '$Version' (formato X.Y.Z)" }
+# Canal: 'beta' (se publica como Pre-release y busca actualizaciones tambien entre betas) o 'stable'
+$channelFile = Join-Path $root 'CHANNEL'
+$Channel = if (Test-Path $channelFile) { (Get-Content $channelFile -Raw).Trim() } else { 'stable' }
+if ($Channel -notin @('beta', 'stable')) { throw "CHANNEL no valido: '$Channel' (beta o stable)" }
 
 if (-not $Repo) {
     $ErrorActionPreference = 'Continue'   # en PowerShell 5.1 el stderr de git se convertiria en error
@@ -25,7 +29,7 @@ if (-not $Repo) {
     if ($url -match 'github\.com[:/]([^/]+/[^/]+?)(\.git)?$') { $Repo = $Matches[1] } else { $Repo = '' }
 }
 $Author = if ($Repo) { $Repo.Split('/')[0] } else { '' }
-Write-Host "Version $Version  Repo '$Repo'"
+Write-Host "Version $Version ($Channel)  Repo '$Repo'"
 
 # Informacion de compilacion (version, repositorio para las actualizaciones y autor = usuario de GitHub)
 $buildInfo = @"
@@ -45,6 +49,9 @@ namespace TecladoFlotante
         public const string Version = "$Version";
         public const string Repo = "$Repo";
         public const string Author = "$Author";
+        public const string Channel = "$Channel";
+        public static bool IsBeta { get { return Channel == "beta"; } }
+        public static string DisplayVersion { get { return IsBeta ? Version + " beta" : Version; } }
         public static string ProjectUrl { get { return Repo.Length == 0 ? "" : "https://github.com/" + Repo; } }
     }
 }

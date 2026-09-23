@@ -30,11 +30,14 @@ jobs:
         shell: pwsh
         run: |
           $file = (Get-Content VERSION -Raw).Trim()
+          $channel = if (Test-Path CHANNEL) { (Get-Content CHANNEL -Raw).Trim() } else { 'stable' }
           if ($env:GITHUB_REF_TYPE -eq 'tag') {
-            $v = $env:GITHUB_REF_NAME.TrimStart('v')
+            # Etiquetas: v1.2.0 (estable) o v1.2.0-beta (beta abierta)
+            $v = ($env:GITHUB_REF_NAME.TrimStart('v') -split '-')[0]
             if ($v -ne $file) { throw "La etiqueta $env:GITHUB_REF_NAME no coincide con el archivo VERSION ($file)" }
           } else { $v = $file }
           "version=$v" >> $env:GITHUB_OUTPUT
+          "prerelease=$([int]($channel -eq 'beta'))" >> $env:GITHUB_OUTPUT
 
       - name: Compilar
         shell: powershell
@@ -77,6 +80,12 @@ jobs:
             '',
             ('SHA-256 de {0}TecladoFlotante-Setup.exe{0}: {0}{1}{0}' -f $tick, $hash)
           )
+          $beta = '${{ steps.ver.outputs.prerelease }}' -eq '1'
+          if ($beta) {
+            $lines = @('> **Beta abierta.** Puede tener fallos: si encuentras alguno, abre un [issue](https://github.com/' + $env:GITHUB_REPOSITORY + '/issues). Las betas se actualizan solas a la siguiente beta.', '') + $lines
+          }
           $lines | Set-Content notes.md -Encoding utf8
+          $title = "Teclado Flotante $v" + $(if ($beta) { ' (beta abierta)' } else { '' })
+          $extra = @(); if ($beta) { $extra += '--prerelease' }
           gh release create $env:GITHUB_REF_NAME dist/TecladoFlotante-Setup.exe dist/TecladoFlotante-Setup.exe.sha256 `
-            --title "Teclado Flotante $v" --notes-file notes.md --verify-tag
+            --title $title --notes-file notes.md --verify-tag @extra
