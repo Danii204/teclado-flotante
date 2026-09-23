@@ -2,6 +2,12 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según [SemVer](https://semver.org/lang/es/).
 
+## [1.3.1] - 2026-09-23
+
+### Corregido
+- Instalar encima de una versión anterior podía fallar con «Acceso denegado» si el teclado antiguo tardaba en cerrarse. Ahora el instalador reintenta y, si el archivo sigue bloqueado, aparta el antiguo y coloca el nuevo.
+- Mensaje de error de instalación más claro, con los pasos a seguir.
+
 ## [1.3.0] - 2026-09-23
 
 Pensada para usar en tablet sin conocimientos de informática.

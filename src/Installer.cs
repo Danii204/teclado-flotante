@@ -50,7 +50,8 @@ namespace TecladoFlotante
                 Directory.CreateDirectory(InstallDir);
                 string self = Path.GetFullPath(Application.ExecutablePath);
                 if (!string.Equals(self, InstalledExe, StringComparison.OrdinalIgnoreCase))
-                    CopyWithRetry(self, InstalledExe);
+                    ReplaceFile(self, InstalledExe);
+                CleanupOldExecutables();
 
                 // En una actualización se respeta si el usuario desactivó el inicio con Windows
                 bool isUpdate;
@@ -81,7 +82,11 @@ namespace TecladoFlotante
             catch (Exception ex)
             {
                 Log.Error("Fallo en la instalación", ex);
-                if (!silent) MessageBox.Show("No se pudo instalar:\n" + ex.Message, AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (!silent) MessageBox.Show(
+                    "No se pudo instalar.\n\n" +
+                    "Cierra el teclado (botón ⋯ → Salir) y vuelve a abrir el instalador. " +
+                    "Si sigue fallando, reinicia el equipo e inténtalo de nuevo.\n\n" +
+                    "Detalle: " + ex.Message, AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Environment.ExitCode = 1;
                 return;
             }
@@ -141,18 +146,58 @@ namespace TecladoFlotante
                 using (p)
                 {
                     if (p.Id == me) continue;
-                    try { if (!p.WaitForExit(3000)) { p.Kill(); p.WaitForExit(2000); } } catch { }
+                    try { if (!p.WaitForExit(4000)) { p.Kill(); p.WaitForExit(3000); } }
+                    catch (Exception ex) { Log.Error("No se pudo cerrar la versión en marcha (pid " + p.Id + ")", ex); }
                 }
             }
         }
 
-        static void CopyWithRetry(string from, string to)
+        /// <summary>
+        /// Sustituye el ejecutable instalado aunque siga bloqueado (versión antigua cerrándose, antivirus
+        /// analizándolo...): reintenta y, si no hay manera, renombra el antiguo (Windows permite renombrar un
+        /// .exe en uso) y copia el nuevo en su lugar. Los restos se borran en el siguiente arranque.
+        /// </summary>
+        public static void ReplaceFile(string from, string to)
         {
+            bool renamed = false;
             for (int i = 0; ; i++)
             {
-                try { File.Copy(from, to, true); return; }
-                catch (IOException) { if (i >= 10) throw; Thread.Sleep(300); }
+                try
+                {
+                    if (File.Exists(to)) File.SetAttributes(to, FileAttributes.Normal);
+                    File.Copy(from, to, true);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    if (!(ex is IOException || ex is UnauthorizedAccessException) || i >= 40) throw;
+                    if (!renamed && i >= 3 && File.Exists(to))
+                    {
+                        try
+                        {
+                            string aside = Path.Combine(Path.GetDirectoryName(to), "TecladoFlotante.old-" + Guid.NewGuid().ToString("N") + ".exe");
+                            File.Move(to, aside);
+                            renamed = true;
+                            Log.Info("El ejecutable anterior estaba bloqueado; se ha apartado como " + Path.GetFileName(aside));
+                            continue;
+                        }
+                        catch (Exception moveError) { Log.Error("No se pudo apartar el ejecutable bloqueado", moveError); }
+                    }
+                    Thread.Sleep(250);
+                }
             }
+        }
+
+        /// <summary>Borra los ejecutables antiguos apartados por <see cref="ReplaceFile"/> (si ya no están en uso).</summary>
+        public static void CleanupOldExecutables()
+        {
+            try
+            {
+                if (!Directory.Exists(InstallDir)) return;
+                foreach (string f in Directory.GetFiles(InstallDir, "TecladoFlotante.old-*.exe"))
+                    try { File.Delete(f); } catch { }
+            }
+            catch { }
         }
 
         public static bool IsAutostart()

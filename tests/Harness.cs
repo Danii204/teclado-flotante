@@ -36,6 +36,7 @@ static class Harness
             if (args.Length > 0 && args[0] == "unit") return Unit();
             if (args.Length > 0 && args[0] == "dummy") { Dummy(); return 0; }
             if (args.Length > 0 && args[0] == "tray") return TraySmoke();
+            if (args.Length > 0 && args[0] == "sleep") { Thread.Sleep(20000); return 0; }
             Unit();
             return E2E(); // devuelve el total de fallos acumulado
         }
@@ -116,6 +117,22 @@ static class Harness
             }
             Check("distribución " + id + ": ids únicos", l.Keys.Select(k => k.Id).Distinct().Count(), l.Keys.Count);
         }
+        // Instalar encima de un .exe que sigue en ejecución (el fallo de «acceso denegado»)
+        string dir = System.IO.Path.Combine(Settings.Folder, "replace");
+        System.IO.Directory.CreateDirectory(dir);
+        string running = System.IO.Path.Combine(dir, "TecladoFlotante-busy.exe");
+        System.IO.File.Copy(Application.ExecutablePath, running, true);
+        System.Diagnostics.Process busy = System.Diagnostics.Process.Start(running, "sleep");
+        Thread.Sleep(800);
+        string newer = System.IO.Path.Combine(dir, "nuevo.bin");
+        System.IO.File.WriteAllBytes(newer, new byte[] { 1, 2, 3, 4, 5 });
+        string replaceError = "";
+        try { Installer.ReplaceFile(newer, running); }
+        catch (Exception ex) { replaceError = ex.Message; }
+        Check("sustituir un .exe en ejecución: sin error", replaceError, "");
+        Check("sustituir un .exe en ejecución: contenido nuevo", System.IO.File.ReadAllBytes(running).Length, 5);
+        try { busy.Kill(); busy.WaitForExit(3000); } catch { }
+
         Check("Unicode de ES correcto (ñ)", KeyLayout.Build("es").Keys.Any(k => k.Id == "ñ"), true);
         Check("EE. UU. sin teclas muertas", KeyLayout.Build("us").DeadKeys.Count, 0);
         return failures - before;

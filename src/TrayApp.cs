@@ -34,6 +34,7 @@ namespace TecladoFlotante
             if (crashed) Log.Info("La sesión anterior no se cerró correctamente");
             settings.Running = true;
             Updater.CleanupDownloads();
+            Installer.CleanupOldExecutables();
             Theme.Apply(settings.ThemeMode);
 
             kb = new KeyboardForm();
