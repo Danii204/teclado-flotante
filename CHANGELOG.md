@@ -2,6 +2,17 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según [SemVer](https://semver.org/lang/es/).
 
+## [1.3.2] - 2026-09-23
+
+Para que en una tablet (sin teclado físico) siempre se encuentre el teclado.
+
+### Añadido
+- Acceso directo **Teclado Flotante** en el escritorio (se crea una sola vez).
+- Opción *Opciones → Al encender el PC*: no mostrar nada, mostrar el botón flotante o mostrar el teclado.
+
+### Cambiado
+- En Windows 11 el icono de la bandeja se muestra en la barra de tareas en lugar de quedar escondido tras la flecha ^ (salvo que el usuario ya lo hubiera configurado).
+
 ## [1.3.1] - 2026-09-23
 
 ### Corregido

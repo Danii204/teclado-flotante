@@ -55,7 +55,7 @@ static class Harness
         try
         {
             app = new TrayApp(true, false, false);
-            Pump(1500);
+            Pump(4000); // da tiempo a que Windows registre el icono y a que se pida mostrarlo
             app.ShowKeyboard();
             Pump(500);
             app.HideKeyboard();
@@ -65,6 +65,19 @@ static class Harness
         }
         catch (Exception ex) { error = ex; }
         Check("la aplicación completa arranca, muestra, oculta y sale sin errores", error == null ? "" : error.ToString(), "");
+
+        // Windows 11: el icono de la bandeja debe quedar visible (no escondido tras la flecha ^)
+        using (Microsoft.Win32.RegistryKey r = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Control Panel\NotifyIconSettings"))
+            if (r != null)
+            {
+                object promoted = null;
+                foreach (string name in r.GetSubKeyNames())
+                    using (Microsoft.Win32.RegistryKey k = r.OpenSubKey(name))
+                        if (k != null && string.Equals(k.GetValue("ExecutablePath") as string, Application.ExecutablePath, StringComparison.OrdinalIgnoreCase))
+                            promoted = k.GetValue("IsPromoted");
+                if (promoted != null) Check("icono de la bandeja visible en Windows 11", promoted, 1);
+                else Console.WriteLine("(Windows aún no había registrado el icono de prueba: se comprobará en otra ejecución)");
+            }
         return failures;
     }
 

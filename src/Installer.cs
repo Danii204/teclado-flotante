@@ -30,6 +30,11 @@ namespace TecladoFlotante
             get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), AppName + ".lnk"); }
         }
 
+        static string DesktopShortcutPath
+        {
+            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), AppName + ".lnk"); }
+        }
+
         static string Version { get { return BuildInfo.DisplayVersion; } }
 
         /// <param name="silent">Sin diálogos.</param>
@@ -78,6 +83,16 @@ namespace TecladoFlotante
                     k.SetValue("InstallDate", DateTime.Now.ToString("yyyyMMdd"));
                 }
                 CreateShortcut(ShortcutPath, InstalledExe);
+                // Acceso directo en el escritorio: en una tablet es la forma más fácil de abrirlo.
+                // Se crea una sola vez (instalando o actualizando); si el usuario lo borra, no reaparece.
+                using (RegistryKey k = Registry.CurrentUser.CreateSubKey(UninstallKey))
+                    if (k.GetValue("DesktopShortcutCreated") == null || !silent)
+                        try
+                        {
+                            CreateShortcut(DesktopShortcutPath, InstalledExe);
+                            k.SetValue("DesktopShortcutCreated", 1, RegistryValueKind.DWord);
+                        }
+                        catch (Exception ex) { Log.Error("No se pudo crear el acceso directo del escritorio", ex); }
             }
             catch (Exception ex)
             {
@@ -113,6 +128,7 @@ namespace TecladoFlotante
             try { Registry.CurrentUser.OpenSubKey(RunKey, true).DeleteValue(RegName, false); } catch { }
             try { Registry.CurrentUser.DeleteSubKeyTree(UninstallKey, false); } catch { }
             try { File.Delete(ShortcutPath); } catch { }
+            try { File.Delete(DesktopShortcutPath); } catch { }
             try { Directory.Delete(Settings.Folder, true); } catch { }
 
             // El propio .exe está en uso: se borra la carpeta un instante después de salir.

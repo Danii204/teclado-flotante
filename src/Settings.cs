@@ -27,6 +27,10 @@ namespace TecladoFlotante
         public bool AutoUpdate = true;
         public string ThemeMode = TecladoFlotante.Theme.Auto;   // auto (como Windows) / light / dark
         public bool AutoShow;                                    // mostrar al tocar un campo de texto
+        public string StartupMode = StartupHidden;               // qué se ve al encender el PC
+        public bool TrayPromoted;                                // ya se pidió a Windows mostrar el icono
+
+        public const string StartupHidden = "hidden", StartupBubble = "bubble", StartupKeyboard = "keyboard";
         public string SkippedVersion = "";
         public bool Running;                          // true mientras se ejecuta: si sigue así al arrancar, hubo un cierre inesperado
 
@@ -82,6 +86,10 @@ namespace TecladoFlotante
             string theme;
             if (d.TryGetValue("Theme", out theme) && TecladoFlotante.Theme.IsValidMode(theme)) s.ThemeMode = theme;
             s.AutoShow = Int(d, "AutoShow", 0) != 0;
+            string startup;
+            if (d.TryGetValue("StartupMode", out startup) &&
+                (startup == StartupHidden || startup == StartupBubble || startup == StartupKeyboard)) s.StartupMode = startup;
+            s.TrayPromoted = Int(d, "TrayPromoted", 0) != 0;
             string skipped;
             if (d.TryGetValue("SkippedVersion", out skipped)) s.SkippedVersion = skipped;
             s.Running = Int(d, "Running", 0) != 0;
@@ -110,6 +118,8 @@ namespace TecladoFlotante
                     "AutoUpdate=" + B(AutoUpdate),
                     "Theme=" + ThemeMode,
                     "AutoShow=" + B(AutoShow),
+                    "StartupMode=" + StartupMode,
+                    "TrayPromoted=" + B(TrayPromoted),
                     "SkippedVersion=" + SkippedVersion,
                     "Running=" + B(Running),
                 };

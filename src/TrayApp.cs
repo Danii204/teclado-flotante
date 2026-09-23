@@ -22,7 +22,7 @@ namespace TecladoFlotante
         readonly EventWaitHandle showEvent, quitEvent;
         readonly System.Windows.Forms.Timer updateTimer = new System.Windows.Forms.Timer();
         readonly AutoShow autoShow;
-        ToolStripMenuItem miTheme, miAutoShow;
+        ToolStripMenuItem miTheme, miAutoShow, miStartup;
         ToolStripMenuItem miUpdate, miToggle, miTopMost, miNumpad, miFnRow, miBubble, miRemember, miAutostart, miAutoUpdate, miOpacity, miLayout, miCheckNow;
         ReleaseInfo availableUpdate;
         bool updating, hotkeyOk, exiting;
@@ -91,7 +91,21 @@ namespace TecladoFlotante
             updateTimer.Interval = FirstUpdateCheckMs;
             if (Updater.Enabled) updateTimer.Start();
 
-            if (!startHidden) ShowKeyboard();
+            if (!startHidden || settings.StartupMode == Settings.StartupKeyboard) ShowKeyboard();
+            else if (settings.StartupMode == Settings.StartupBubble) ShowBubble();
+
+            // Windows 11 esconde los iconos nuevos tras la flecha ^: en una tablet no se encontraría.
+            if (!settings.TrayPromoted)
+            {
+                System.Windows.Forms.Timer promote = new System.Windows.Forms.Timer { Interval = 3000 };
+                promote.Tick += delegate
+                {
+                    promote.Stop();
+                    promote.Dispose();
+                    if (PromoteTrayIcon()) { settings.TrayPromoted = true; settings.Save(); }
+                };
+                promote.Start();
+            }
             if (updated) Balloon("Teclado Flotante actualizado", "Ya tienes la versión " + BuildInfo.DisplayVersion + ".", ToolTipIcon.Info);
             else if (recovered) Balloon("Teclado Flotante", "Se ha vuelto a abrir tras un error inesperado.", ToolTipIcon.Warning);
             else if (!hotkeyOk && !startHidden)
@@ -208,12 +222,42 @@ namespace TecladoFlotante
         public void HideKeyboard()
         {
             kb.HideKeyboard();
-            if (settings.Bubble)
+            if (settings.Bubble) ShowBubble();
+        }
+
+        void ShowBubble()
+        {
+            Point p = settings.BubblePos;
+            if (p.X == int.MinValue) p = new Point(kb.Right - bubble.Width - 8, kb.Top + 8);
+            bubble.ShowAt(p);
+        }
+
+        /// <summary>
+        /// Pide a Windows 11 que muestre el icono en la barra de tareas (NotifyIconSettings\IsPromoted).
+        /// Solo si el usuario no lo ha decidido ya. Devuelve true cuando la entrada existe y queda resuelta.
+        /// </summary>
+        static bool PromoteTrayIcon()
+        {
+            try
             {
-                Point p = settings.BubblePos;
-                if (p.X == int.MinValue) p = new Point(kb.Right - bubble.Width - 8, kb.Top + 8);
-                bubble.ShowAt(p);
+                const string root = @"Control Panel\NotifyIconSettings";
+                using (RegistryKey r = Registry.CurrentUser.OpenSubKey(root))
+                {
+                    if (r == null) return true; // Windows 10: no aplica
+                    string exe = Application.ExecutablePath;
+                    foreach (string name in r.GetSubKeyNames())
+                        using (RegistryKey k = Registry.CurrentUser.OpenSubKey(root + "\\" + name, true))
+                        {
+                            if (k == null) continue;
+                            string path = k.GetValue("ExecutablePath") as string;
+                            if (!string.Equals(path, exe, StringComparison.OrdinalIgnoreCase)) continue;
+                            if (k.GetValue("IsPromoted") == null) k.SetValue("IsPromoted", 1, RegistryValueKind.DWord);
+                            return true;
+                        }
+                }
             }
+            catch (Exception ex) { Log.Error("No se pudo hacer visible el icono de la bandeja", ex); return true; }
+            return false; // Windows aún no ha registrado el icono: se reintentará en el próximo arranque
         }
 
         public void Toggle()
@@ -408,10 +452,24 @@ namespace TecladoFlotante
                 ShowKeyboard();
             });
 
+            miStartup = new ToolStripMenuItem("Al encender el PC");
+            foreach (string[] option in new[]
+            {
+                new[] { Settings.StartupHidden, "No mostrar nada (solo el icono)" },
+                new[] { Settings.StartupBubble, "Mostrar el botón flotante" },
+                new[] { Settings.StartupKeyboard, "Mostrar el teclado" },
+            })
+            {
+                string mode = option[0];
+                ToolStripMenuItem item = new ToolStripMenuItem(option[1], null, delegate { settings.StartupMode = mode; settings.Save(); });
+                item.Tag = mode;
+                miStartup.DropDownItems.Add(item);
+            }
+
             ToolStripMenuItem miSettings = new ToolStripMenuItem("Opciones");
             miSettings.DropDownItems.AddRange(new ToolStripItem[]
             {
-                miTopMost, miOpacity, miBubble, miRemember, miAutostart, new ToolStripSeparator(), miReset,
+                miTopMost, miOpacity, miBubble, miRemember, miAutostart, miStartup, new ToolStripSeparator(), miReset,
             });
 
             miCheckNow = new ToolStripMenuItem("Buscar actualizaciones ahora", null, delegate { CheckForUpdates(true); });
@@ -443,6 +501,7 @@ namespace TecladoFlotante
                 miFnRow.Checked = kb.ShowFnRow;
                 foreach (ToolStripMenuItem i in miTheme.DropDownItems) i.Checked = (string)i.Tag == settings.ThemeMode;
                 miAutoShow.Checked = settings.AutoShow && autoShow.Enabled;
+                foreach (ToolStripMenuItem i in miStartup.DropDownItems) i.Checked = (string)i.Tag == settings.StartupMode;
                 miTopMost.Checked = kb.KeyboardTopMost;
                 miBubble.Checked = settings.Bubble;
                 miRemember.Checked = settings.RememberPosition;
