@@ -35,6 +35,7 @@ static class Harness
             if (args.Length > 0 && args[0] == "render") return Render(args[1]);
             if (args.Length > 0 && args[0] == "unit") return Unit();
             if (args.Length > 0 && args[0] == "dummy") { Dummy(); return 0; }
+            if (args.Length > 0 && args[0] == "tray") return TraySmoke();
             Unit();
             return E2E(); // devuelve el total de fallos acumulado
         }
@@ -42,6 +43,28 @@ static class Harness
         {
             try { System.IO.Directory.Delete(data, true); } catch { }
         }
+    }
+
+    /// <summary>Arranca la aplicación completa (bandeja, menús, teclado) oculta y la cierra.</summary>
+    static int TraySmoke()
+    {
+        Exception error = null;
+        Application.ThreadException += (s, e) => error = e.Exception;
+        TrayApp app = null;
+        try
+        {
+            app = new TrayApp(true, false, false);
+            Pump(1500);
+            app.ShowKeyboard();
+            Pump(500);
+            app.HideKeyboard();
+            Pump(300);
+            app.ExitThread();
+            Pump(300);
+        }
+        catch (Exception ex) { error = ex; }
+        Check("la aplicación completa arranca, muestra, oculta y sale sin errores", error == null ? "" : error.ToString(), "");
+        return failures;
     }
 
     /// <summary>Pruebas sin ratón (también se ejecutan en GitHub Actions).</summary>
@@ -122,11 +145,66 @@ static class Harness
         kb.Press(Find(kb, "ShiftL")); kb.Press(Find(kb, "Caps"));
         kb.ShowFnRow = false; Save(kb, dir + "\\light-nofn.png"); kb.ShowFnRow = true;
         Theme.Apply(Theme.Dark); kb.ApplyTheme();
+
+        // Novedades para tablet: botón «Actualizar», diálogo y menús grandes
+        kb.UpdateLabel = "Actualizar"; Save(kb, dir + "\\update-button.png"); kb.UpdateLabel = null;
+        foreach (string mode in new[] { Theme.Dark, Theme.Light })
+        {
+            Theme.Apply(mode);
+            using (UpdateDialog d = new UpdateDialog("1.3.0", "1.2.0 beta"))
+            {
+                Rectangle wa0 = Screen.PrimaryScreen.WorkingArea;
+                d.StartPosition = FormStartPosition.Manual;
+                d.Location = new Point(wa0.Left + 60, wa0.Top + 60);
+                d.Show();
+                Pump(500);
+                Rectangle r = d.Bounds;
+                using (Bitmap bmp = new Bitmap(r.Width, r.Height))
+                {
+                    using (Graphics g = Graphics.FromImage(bmp)) g.CopyFromScreen(r.Location, Point.Empty, r.Size);
+                    bmp.Save(dir + "\\dialog-" + mode + "-" + DateTime.Now.Ticks + ".png", ImageFormat.Png);
+                }
+                d.Close();
+            }
+            RenderMenu(dir + "\\menu-" + mode + ".png");
+        }
+        Theme.Apply(Theme.Dark);
         kb.Bounds = new Rectangle(0, 0, 480, 170);
         Save(kb, dir + "\\small.png");
         using (Bitmap b = IconArt.Render(256)) b.Save(dir + "\\icon256.png", ImageFormat.Png);
         using (Bitmap b = IconArt.Render(16)) b.Save(dir + "\\icon16.png", ImageFormat.Png);
         return 0;
+    }
+
+    /// <summary>Muestra un momento un menú con el estilo táctil y lo captura de la pantalla.</summary>
+    static void RenderMenu(string path)
+    {
+        ContextMenuStrip m = new ContextMenuStrip();
+        ToolStripMenuItem upd = new ToolStripMenuItem("Actualizar a la versión 1.3.0");
+        upd.Font = new Font(upd.Font, FontStyle.Bold);
+        ToolStripMenuItem layout = new ToolStripMenuItem("Distribución");
+        layout.DropDownItems.Add(new ToolStripMenuItem("Español (España)") { Checked = true });
+        layout.DropDownItems.Add(new ToolStripMenuItem("English (US)"));
+        m.Items.AddRange(new ToolStripItem[]
+        {
+            upd, new ToolStripMenuItem("Ocultar teclado") { ShortcutKeyDisplayString = "Ctrl+Alt+K" }, new ToolStripSeparator(),
+            layout, new ToolStripMenuItem("Bloque numérico") { Checked = true }, new ToolStripMenuItem("Fila de funciones (F1–F12)"),
+            new ToolStripMenuItem("Tema"), new ToolStripMenuItem("Mostrar al tocar un campo de texto") { Checked = true },
+            new ToolStripSeparator(), new ToolStripMenuItem("Salir"),
+        });
+        TouchMenu.Style(m);
+        Rectangle wa = Screen.PrimaryScreen.WorkingArea;
+        m.Show(new Point(wa.Left + 60, wa.Top + 60));
+        Pump(400);
+        Rectangle r = m.Bounds;
+        using (Bitmap bmp = new Bitmap(r.Width, r.Height))
+        {
+            using (Graphics g = Graphics.FromImage(bmp)) g.CopyFromScreen(r.Location, Point.Empty, r.Size);
+            bmp.Save(path, ImageFormat.Png);
+        }
+        m.Close();
+        m.Dispose();
+        Pump(100);
     }
 
     static void Save(KeyboardForm kb, string path)

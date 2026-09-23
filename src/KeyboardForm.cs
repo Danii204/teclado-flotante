@@ -24,6 +24,7 @@ namespace TecladoFlotante
         public event EventHandler HotkeyPressed;
         public event EventHandler BoundsCommitted;
         public event EventHandler<ScreenPointEventArgs> MenuRequested;
+        public event EventHandler UpdateRequested;
 
         enum Button { None = -1, Menu = 0, Pin = 1, Minimize = 2 }
         enum Drag { None, Move, Resize }
@@ -53,6 +54,9 @@ namespace TecladoFlotante
         // Geometría
         RectangleF strip;
         float contentW, contentH;
+        RectangleF updateButton;        // botón «Actualizar» de la barra (vacío si no hay versión nueva)
+        string updateLabel;
+        bool updatePressed;
         readonly RectangleF[] buttons = new RectangleF[3];
         float unitH;
         int pad, edge;
@@ -103,6 +107,18 @@ namespace TecladoFlotante
                 if (IsHandleCreated)
                     Native.SetWindowPos(Handle, value ? Native.HWND_TOPMOST : Native.HWND_NOTOPMOST, 0, 0, 0, 0,
                         Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOACTIVATE);
+                Invalidate();
+            }
+        }
+
+        /// <summary>Texto del botón de actualización de la barra superior; null lo oculta.</summary>
+        public string UpdateLabel
+        {
+            get { return updateLabel; }
+            set
+            {
+                updateLabel = value;
+                DoLayout();
                 Invalidate();
             }
         }
@@ -238,6 +254,13 @@ namespace TecladoFlotante
             for (int i = 0; i < buttons.Length; i++)
                 buttons[i] = new RectangleF(strip.Right - (buttons.Length - i) * bw, strip.Y, bw, stripH);
 
+            if (updateLabel != null)
+            {
+                float uw = Math.Min(stripH * 6.5f, strip.Width * 0.3f);
+                updateButton = new RectangleF(buttons[0].Left - uw - 6 * scale, strip.Y + 1, uw, stripH - 2);
+            }
+            else updateButton = RectangleF.Empty;
+
             RectangleF content = new RectangleF(pad, strip.Bottom + 1, cs.Width - 2 * pad, cs.Height - pad - strip.Bottom - 1);
             contentW = content.Width;
             contentH = content.Height;
@@ -310,6 +333,13 @@ namespace TecladoFlotante
             int edges = EdgesAt(e.Location);
             if (edges != 0) { BeginDrag(Drag.Resize, edges); return; }
 
+            if (!updateButton.IsEmpty && updateButton.Contains(e.Location))
+            {
+                updatePressed = true;
+                Invalidate(Rectangle.Ceiling(updateButton));
+                return;
+            }
+
             Button b = ButtonAt(e.Location);
             if (b != Button.None) { pressedButton = b; Invalidate(Rectangle.Ceiling(buttons[(int)b])); return; }
 
@@ -375,7 +405,9 @@ namespace TecladoFlotante
             base.OnMouseUp(e);
             if (e.Button != MouseButtons.Left) return;
             Button clicked = pressedButton != Button.None && ButtonAt(e.Location) == pressedButton ? pressedButton : Button.None;
+            bool updateClicked = updatePressed && updateButton.Contains(e.Location);
             EndInteraction();
+            if (updateClicked && UpdateRequested != null) { UpdateRequested(this, EventArgs.Empty); return; }
             switch (clicked)
             {
                 case Button.Menu:
@@ -428,6 +460,7 @@ namespace TecladoFlotante
             Cursor = Cursors.Default;
             if (pressed != null) { InvalidateKey(pressed); pressed = null; }
             if (pressedButton != Button.None) { Invalidate(Rectangle.Ceiling(buttons[(int)pressedButton])); pressedButton = Button.None; }
+            if (updatePressed) { updatePressed = false; Invalidate(Rectangle.Ceiling(updateButton)); }
             if (committed && BoundsCommitted != null) BoundsCommitted(this, EventArgs.Empty);
         }
 
@@ -593,6 +626,16 @@ namespace TecladoFlotante
             using (GraphicsPath p = Theme.RoundRect(grip, gh / 2))
             using (SolidBrush b = new SolidBrush(Theme.Grip))
                 g.FillPath(b, p);
+
+            if (!updateButton.IsEmpty)
+            {
+                using (GraphicsPath p = Theme.RoundRect(updateButton, updateButton.Height / 2))
+                using (SolidBrush b = new SolidBrush(updatePressed ? Color.FromArgb(0, 90, 170) : Theme.Accent))
+                    g.FillPath(b, p);
+                using (SolidBrush tb = new SolidBrush(Theme.OnAccent))
+                    DrawFitted(g, updateLabel, Theme.TextFamily, updateButton.Height * 0.55f, tb,
+                               RectangleF.Inflate(updateButton, -updateButton.Height * 0.3f, 0));
+            }
 
             string[] glyphs = { "", topMost ? "" : "", "" };
             Font f = fonts.Get(Theme.IconFamily, strip.Height * 0.48f, FontStyle.Regular);

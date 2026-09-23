@@ -105,6 +105,18 @@ namespace TecladoFlotante
             return 1f;
         }
 
+        /// <summary>Barra de título oscura (DWMWA_USE_IMMERSIVE_DARK_MODE) para las ventanas de diálogo.</summary>
+        public static void DarkTitleBar(IntPtr hwnd, bool dark)
+        {
+            try
+            {
+                int v = dark ? 1 : 0;
+                DwmSetWindowAttribute(hwnd, 20, ref v, 4);
+            }
+            catch (DllNotFoundException) { }
+            catch (EntryPointNotFoundException) { }
+        }
+
         public static void RoundCorners(IntPtr hwnd, int preference, int borderColorBgr)
         {
             try

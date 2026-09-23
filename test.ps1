@@ -15,7 +15,10 @@ Copy-Item "$root\dist\TecladoFlotante.exe" $t -Force
 if ($LASTEXITCODE -ne 0) { throw 'csc fallo' }
 switch ($Mode) {
     'render' { & "$t\Harness.exe" render "$t\img" }
-    'unit'   { & "$t\Harness.exe" unit }
+    'unit'   {
+        & "$t\Harness.exe" unit; $u = $LASTEXITCODE
+        & "$t\Harness.exe" tray;  exit ($u + $LASTEXITCODE)   # arranque completo de la app (sin raton)
+    }
     default  { & "$t\Harness.exe" }
 }
 exit $LASTEXITCODE

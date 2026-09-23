@@ -66,10 +66,26 @@ namespace TecladoFlotante
             base.WndProc(ref m);
         }
 
+        bool badge;
+
+        /// <summary>Punto naranja: hay una versión nueva disponible.</summary>
+        public bool Badge
+        {
+            get { return badge; }
+            set { badge = value; Invalidate(); }
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.Clear(Theme.Accent);
             IconArt.Draw(e.Graphics, new RectangleF(0, 0, Width, Height), Theme.Accent, Color.White);
+            if (badge)
+            {
+                float d = Width * 0.32f;
+                RectangleF r = new RectangleF(Width - d - Width * 0.06f, Width * 0.06f, d, d);
+                using (SolidBrush b = new SolidBrush(Color.FromArgb(255, 140, 0))) e.Graphics.FillEllipse(b, r);
+                using (Pen p = new Pen(Color.White, Math.Max(1.5f, d * 0.12f))) e.Graphics.DrawEllipse(p, r);
+            }
         }
 
         protected override void OnMouseDown(MouseEventArgs e)

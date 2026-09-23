@@ -2,6 +2,17 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según [SemVer](https://semver.org/lang/es/).
 
+## [1.3.0] - 2026-09-23
+
+Pensada para usar en tablet sin conocimientos de informática.
+
+### Añadido
+- Botón **Actualizar** en la barra del teclado cuando hay una versión nueva, y punto naranja en el botón flotante si está minimizado.
+- Ventana de actualización sencilla con dos botones grandes: «Actualizar ahora» y «Más tarde».
+
+### Cambiado
+- Menús desplegables más grandes y fáciles de tocar con el dedo, con los colores del tema claro u oscuro.
+
 ## [1.2.0] - 2026-09-23
 
 Primera versión publicada, como **beta abierta**.

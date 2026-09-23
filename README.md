@@ -43,6 +43,8 @@ Se instala solo para tu usuario, se abre al terminar y, a partir de entonces, ar
 
 ## Actualizaciones
 
+Sin entrar en GitHub ni saber nada de informática: cuando hay una versión nueva aparece un botón azul **Actualizar** en la barra del teclado (y un punto naranja en el botón flotante). Un toque en **Actualizar ahora** y listo.
+
 El programa comprueba cada 12 horas si hay una versión nueva en [Releases](https://github.com/Danii204/teclado-flotante/releases) (durante la beta abierta, también las marcadas como *Pre-release*). Si la hay, avisa en la bandeja: **un clic** y se descarga, se verifica (SHA-256), se instala y vuelve a abrirse solo. También se puede comprobar a mano desde *Ayuda y actualizaciones → Buscar actualizaciones ahora*, o desactivar el aviso.
 
 ## Privacidad

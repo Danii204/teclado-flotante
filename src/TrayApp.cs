@@ -53,6 +53,7 @@ namespace TecladoFlotante
             kb.TopMostToggled += delegate { SaveState(); };
             kb.BoundsCommitted += delegate { SaveState(); };
             kb.MenuRequested += (s, e) => menu.Show(e.Point);
+            kb.UpdateRequested += delegate { PromptUpdate(); };
 
             bubble = new BubbleForm();
             bubble.Clicked += delegate { ShowKeyboard(); };
@@ -65,6 +66,7 @@ namespace TecladoFlotante
             if (settings.AutoShow) autoShow.Start();
 
             menu = BuildMenu();
+            TouchMenu.Style(menu);
             tray = new NotifyIcon();
             tray.Icon = IconArt.CreateIcon(SystemInformation.SmallIconSize.Width);
             tray.Text = "Teclado Flotante " + BuildInfo.DisplayVersion + (hotkeyOk ? " (Ctrl+Alt+K)" : "");
@@ -262,26 +264,24 @@ namespace TecladoFlotante
             availableUpdate = r;
             miUpdate.Text = "Actualizar a la versión " + r.Version;
             miUpdate.Visible = true;
+            // A la vista en la tablet: botón en la barra del teclado y punto naranja en el botón flotante
+            kb.UpdateLabel = "Actualizar";
+            bubble.Badge = true;
             if (manual) PromptUpdate();
-            else if (settings.SkippedVersion != r.Version.ToString())
-                Balloon("Nueva versión disponible: " + r.Version, "Haz clic aquí para actualizar (tarda unos segundos).", ToolTipIcon.Info);
+            else Balloon("Nueva versión disponible: " + r.Version, "Toca «Actualizar» en la barra del teclado (tarda unos segundos).", ToolTipIcon.Info);
         }
 
         void PromptUpdate()
         {
             ReleaseInfo r = availableUpdate;
             if (r == null || updating) return;
-            DialogResult answer = MessageBox.Show(
-                "Hay una nueva versión de Teclado Flotante: " + r.Version + " (tienes la " + BuildInfo.DisplayVersion + ").\n\n" +
-                "El teclado se cerrará un momento y volverá a abrirse solo.\n\n¿Actualizar ahora?\n\n" +
-                "(«No» = recordármelo más tarde · «Cancelar» = no avisar de esta versión)",
-                Installer.AppName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
-            if (answer == DialogResult.Cancel) { settings.SkippedVersion = r.Version.ToString(); settings.Save(); return; }
-            if (answer != DialogResult.Yes) return;
+            // «Más tarde» deja el botón «Actualizar» visible para cuando se quiera
+            if (!UpdateDialog.Ask(r.Version.ToString(), BuildInfo.DisplayVersion)) return;
 
             updating = true;
             miUpdate.Enabled = false;
             miUpdate.Text = "Descargando la versión " + r.Version + "…";
+            kb.UpdateLabel = "Descargando…";
             bool hidden = !kb.Visible;
             ThreadPool.QueueUserWorkItem(delegate
             {
@@ -311,6 +311,7 @@ namespace TecladoFlotante
             updating = false;
             miUpdate.Enabled = true;
             miUpdate.Text = "Actualizar a la versión " + r.Version;
+            kb.UpdateLabel = "Actualizar";
             if (MessageBox.Show("No se pudo actualizar:\n" + error.Message + "\n\n¿Abrir la página de descargas para hacerlo a mano?",
                     Installer.AppName, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
                 OpenUrl(r.PageUrl);
