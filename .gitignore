@@ -1,0 +1,13 @@
+# Compilación
+obj/
+dist/
+*.exe
+*.pdb
+*.ico
+
+# Varios
+notes.md
+*.tmp
+Thumbs.db
+.vs/
+.vscode/

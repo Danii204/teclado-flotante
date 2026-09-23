@@ -1,0 +1,82 @@
+name: Compilar y publicar
+
+# - En cada push a main y en cada pull request: compila y ejecuta las pruebas.
+# - Al subir una etiqueta vX.Y.Z: además publica la versión en Releases con el instalador y su SHA-256.
+#   La app instalada consulta esas Releases para ofrecer la actualización.
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write   # necesario solo para crear la Release al subir una etiqueta
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determinar la versión
+        id: ver
+        shell: pwsh
+        run: |
+          $file = (Get-Content VERSION -Raw).Trim()
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $v = $env:GITHUB_REF_NAME.TrimStart('v')
+            if ($v -ne $file) { throw "La etiqueta $env:GITHUB_REF_NAME no coincide con el archivo VERSION ($file)" }
+          } else { $v = $file }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Compilar
+        shell: powershell
+        run: .\build.ps1 -Version '${{ steps.ver.outputs.version }}' -Repo '${{ github.repository }}'
+
+      - name: Pruebas
+        shell: powershell
+        run: .\test.ps1 unit
+
+      - name: Huella SHA-256
+        shell: pwsh
+        run: |
+          $h = (Get-FileHash dist/TecladoFlotante-Setup.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$h  TecladoFlotante-Setup.exe" | Set-Content dist/TecladoFlotante-Setup.exe.sha256 -Encoding ascii -NoNewline
+          Write-Host "SHA-256: $h"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TecladoFlotante-${{ steps.ver.outputs.version }}
+          path: |
+            dist/TecladoFlotante-Setup.exe
+            dist/TecladoFlotante-Setup.exe.sha256
+
+      - name: Publicar la versión
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = '${{ steps.ver.outputs.version }}'
+          $changelog = Get-Content CHANGELOG.md -Raw
+          $m = [regex]::Match($changelog, "(?ms)^## \[?$([regex]::Escape($v))\]?[^\n]*\n(.*?)(?=^## |\z)")
+          $notes = if ($m.Success) { $m.Groups[1].Value.Trim() } else { '' }
+          $hash = (Get-Content dist/TecladoFlotante-Setup.exe.sha256).Split(' ')[0]
+          $tick = [char]96
+          $lines = @(
+            $notes, '',
+            '### Instalación',
+            'Descarga **TecladoFlotante-Setup.exe** y ábrelo. Si ya lo tienes instalado, el programa te avisará y se actualizará con un clic.',
+            '',
+            ('SHA-256 de {0}TecladoFlotante-Setup.exe{0}: {0}{1}{0}' -f $tick, $hash)
+          )
+          $lines | Set-Content notes.md -Encoding utf8
+          gh release create $env:GITHUB_REF_NAME dist/TecladoFlotante-Setup.exe dist/TecladoFlotante-Setup.exe.sha256 `
+            --title "Teclado Flotante $v" --notes-file notes.md --verify-tag
