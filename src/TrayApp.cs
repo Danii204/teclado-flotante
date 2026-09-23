@@ -21,6 +21,8 @@ namespace TecladoFlotante
         readonly ContextMenuStrip menu;
         readonly EventWaitHandle showEvent, quitEvent;
         readonly System.Windows.Forms.Timer updateTimer = new System.Windows.Forms.Timer();
+        readonly AutoShow autoShow;
+        ToolStripMenuItem miTheme, miAutoShow;
         ToolStripMenuItem miUpdate, miToggle, miTopMost, miNumpad, miFnRow, miBubble, miRemember, miAutostart, miAutoUpdate, miOpacity, miLayout, miCheckNow;
         ReleaseInfo availableUpdate;
         bool updating, hotkeyOk, exiting;
@@ -32,8 +34,10 @@ namespace TecladoFlotante
             if (crashed) Log.Info("La sesión anterior no se cerró correctamente");
             settings.Running = true;
             Updater.CleanupDownloads();
+            Theme.Apply(settings.ThemeMode);
 
             kb = new KeyboardForm();
+            kb.ApplyTheme();
             MigrateFromV10();
             kb.Configure(settings.Layout, settings.Numpad, settings.FnRow);
             kb.Bounds = StartBounds(crashed || recovered);
@@ -55,6 +59,11 @@ namespace TecladoFlotante
             bubble.Moved += delegate { settings.BubblePos = bubble.Location; settings.Save(); };
             bubble.MenuRequested += (s, e) => menu.Show(e.Point);
 
+            autoShow = new AutoShow(kb,
+                p => (kb.Visible && kb.Bounds.Contains(p)) || (bubble.Visible && bubble.Bounds.Contains(p)),
+                delegate { if (!kb.Visible && settings.AutoShow) ShowKeyboard(); });
+            if (settings.AutoShow) autoShow.Start();
+
             menu = BuildMenu();
             tray = new NotifyIcon();
             tray.Icon = IconArt.CreateIcon(SystemInformation.SmallIconSize.Width);
@@ -66,6 +75,7 @@ namespace TecladoFlotante
 
             SystemEvents.DisplaySettingsChanged += OnDisplayChanged;
             SystemEvents.SessionEnded += OnSessionEnded;
+            SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
 
             showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, Installer.ShowEventName);
             quitEvent = new EventWaitHandle(false, EventResetMode.AutoReset, Installer.QuitEventName);
@@ -143,6 +153,22 @@ namespace TecladoFlotante
                 });
             }
             catch (InvalidOperationException) { }
+        }
+
+        void OnUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
+        {
+            // En modo automático, seguir al tema de Windows en cuanto se cambia
+            if (settings.ThemeMode != Theme.Auto || e.Category != UserPreferenceCategory.General) return;
+            try { kb.BeginInvoke((MethodInvoker)delegate { SetTheme(Theme.Auto); }); }
+            catch (InvalidOperationException) { }
+        }
+
+        void SetTheme(string mode)
+        {
+            settings.ThemeMode = mode;
+            Theme.Apply(mode);
+            kb.ApplyTheme();
+            settings.Save();
         }
 
         void OnSessionEnded(object sender, SessionEndedEventArgs e)
@@ -324,7 +350,23 @@ namespace TecladoFlotante
             }
 
             miNumpad = new ToolStripMenuItem("Bloque numérico", null, delegate { kb.ShowNumpad = !kb.ShowNumpad; SaveState(); });
-            miFnRow = new ToolStripMenuItem("Fila de funciones (Esc, F1–F12)", null, delegate { kb.ShowFnRow = !kb.ShowFnRow; SaveState(); });
+            miFnRow = new ToolStripMenuItem("Fila de funciones (F1–F12)", null, delegate { kb.ShowFnRow = !kb.ShowFnRow; SaveState(); });
+            miTheme = new ToolStripMenuItem("Tema");
+            foreach (string[] option in new[] { new[] { Theme.Auto, "Automático (como Windows)" }, new[] { Theme.Light, "Claro" }, new[] { Theme.Dark, "Oscuro" } })
+            {
+                string mode = option[0];
+                ToolStripMenuItem item = new ToolStripMenuItem(option[1], null, delegate { SetTheme(mode); });
+                item.Tag = mode;
+                miTheme.DropDownItems.Add(item);
+            }
+
+            miAutoShow = new ToolStripMenuItem("Mostrar al tocar un campo de texto", null, delegate
+            {
+                settings.AutoShow = !settings.AutoShow;
+                if (settings.AutoShow) autoShow.Start(); else autoShow.Stop();
+                settings.Save();
+            });
+
             miTopMost = new ToolStripMenuItem("Siempre encima de las ventanas", null, delegate
             {
                 kb.KeyboardTopMost = !kb.KeyboardTopMost;
@@ -386,7 +428,7 @@ namespace TecladoFlotante
             m.Items.AddRange(new ToolStripItem[]
             {
                 miUpdate, miToggle, new ToolStripSeparator(),
-                miLayout, miNumpad, miFnRow, miSettings, miHelp,
+                miLayout, miNumpad, miFnRow, miTheme, miAutoShow, miSettings, miHelp,
                 new ToolStripSeparator(), miExit,
             });
 
@@ -397,6 +439,8 @@ namespace TecladoFlotante
                 foreach (ToolStripMenuItem i in miLayout.DropDownItems) i.Checked = (string)i.Tag == kb.LayoutId;
                 miNumpad.Checked = kb.ShowNumpad;
                 miFnRow.Checked = kb.ShowFnRow;
+                foreach (ToolStripMenuItem i in miTheme.DropDownItems) i.Checked = (string)i.Tag == settings.ThemeMode;
+                miAutoShow.Checked = settings.AutoShow && autoShow.Enabled;
                 miTopMost.Checked = kb.KeyboardTopMost;
                 miBubble.Checked = settings.Bubble;
                 miRemember.Checked = settings.RememberPosition;
@@ -434,6 +478,8 @@ namespace TecladoFlotante
                 updateTimer.Stop();
                 SystemEvents.DisplaySettingsChanged -= OnDisplayChanged;
                 SystemEvents.SessionEnded -= OnSessionEnded;
+                SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
+                autoShow.Dispose();
                 settings.Running = false;
                 SaveState();
                 Native.UnregisterHotKey(kb.Handle, HotkeyId);

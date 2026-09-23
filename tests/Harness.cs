@@ -16,6 +16,12 @@ static class Harness
     const uint LEFTDOWN = 0x2, LEFTUP = 0x4;
 
     static int failures;
+    static IntPtr expectedForeground = IntPtr.Zero;   // seguro: nunca teclear si el foco está en otra ventana
+
+    class ForegroundLostException : Exception
+    {
+        public ForegroundLostException(string m) : base(m) { }
+    }
 
     [STAThread]
     static int Main(string[] args)
@@ -28,6 +34,7 @@ static class Harness
         {
             if (args.Length > 0 && args[0] == "render") return Render(args[1]);
             if (args.Length > 0 && args[0] == "unit") return Unit();
+            if (args.Length > 0 && args[0] == "dummy") { Dummy(); return 0; }
             Unit();
             return E2E(); // devuelve el total de fallos acumulado
         }
@@ -110,6 +117,11 @@ static class Harness
         kb.LayoutId = "us"; Save(kb, dir + "\\us.png");
         kb.Press(Find(kb, "ShiftL")); Save(kb, dir + "\\us-shift.png"); kb.Press(Find(kb, "ShiftL"));
         kb.LayoutId = "es";
+        Theme.Apply(Theme.Light); kb.ApplyTheme(); Save(kb, dir + "\\light.png");
+        kb.Press(Find(kb, "ShiftL")); kb.Press(Find(kb, "Caps")); Save(kb, dir + "\\light-shift.png");
+        kb.Press(Find(kb, "ShiftL")); kb.Press(Find(kb, "Caps"));
+        kb.ShowFnRow = false; Save(kb, dir + "\\light-nofn.png"); kb.ShowFnRow = true;
+        Theme.Apply(Theme.Dark); kb.ApplyTheme();
         kb.Bounds = new Rectangle(0, 0, 480, 170);
         Save(kb, dir + "\\small.png");
         using (Bitmap b = IconArt.Render(256)) b.Save(dir + "\\icon256.png", ImageFormat.Png);
@@ -162,6 +174,8 @@ static class Harness
     {
         foreach (string id in ids)
         {
+            if (expectedForeground != IntPtr.Zero && GetForegroundWindow() != expectedForeground)
+                throw new ForegroundLostException("otra ventana tiene el foco; se aborta para no escribir en ella");
             RectangleF r = Find(kb, id).Rect;
             ClickAt(kb.PointToScreen(new Point((int)(r.X + r.Width / 2), (int)(r.Y + r.Height / 2))));
         }
@@ -174,10 +188,26 @@ static class Harness
         Console.WriteLine((ok ? "OK    " : "FALLO ") + name + (ok ? "" : "  -> obtenido [" + actual + "] esperado [" + expected + "]"));
     }
 
+    static Rectangle DummyBounds()
+    {
+        Rectangle wa = Screen.PrimaryScreen.WorkingArea;
+        return new Rectangle(wa.Right - 520, wa.Top + 40, 480, 220);
+    }
+
+    /// <summary>Ventana de otro proceso con un cuadro de texto arriba y un botón abajo.</summary>
+    static void Dummy()
+    {
+        Form f = new Form { TopMost = true, Text = "Ventana de prueba (otro proceso)", StartPosition = FormStartPosition.Manual, FormBorderStyle = FormBorderStyle.FixedToolWindow };
+        f.Bounds = DummyBounds();
+        f.Controls.Add(new Button { Text = "Botón", Dock = DockStyle.Bottom, Height = 70 });
+        f.Controls.Add(new TextBox { Dock = DockStyle.Top, Font = new Font("Segoe UI", 18) });
+        Application.Run(f);
+    }
+
     static int E2E()
     {
         Rectangle wa = Screen.PrimaryScreen.WorkingArea;
-        Form target = new Form { Text = "Destino de prueba", StartPosition = FormStartPosition.Manual, Bounds = new Rectangle(wa.Left + 40, wa.Top + 40, 700, 140) };
+        Form target = new Form { TopMost = true, Text = "Destino de prueba", StartPosition = FormStartPosition.Manual, Bounds = new Rectangle(wa.Left + 40, wa.Top + 40, 700, 140) };
         TextBox box = new TextBox { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 16) };
         target.Controls.Add(box);
         target.Show(); target.Activate(); box.Focus();
@@ -185,6 +215,22 @@ static class Harness
         // Un clic real da el primer plano aunque Windows bloquee SetForegroundWindow
         ClickAt(box.PointToScreen(new Point(box.Width / 2, box.Height / 2)));
         Pump(200);
+        if (GetForegroundWindow() != target.Handle)
+        {
+            Console.WriteLine("ABORTADO: la ventana de prueba no tiene el foco (¿hay otra ventana encima?). No se ha escrito nada.");
+            return failures + 1;
+        }
+        expectedForeground = target.Handle;
+        try { return E2ESteps(target, box, wa); }
+        catch (ForegroundLostException ex)
+        {
+            Console.WriteLine("ABORTADO: " + ex.Message);
+            return failures + 1;
+        }
+    }
+
+    static int E2ESteps(Form target, TextBox box, Rectangle wa)
+    {
 
         KeyboardForm kb = new KeyboardForm();
         kb.Bounds = new Rectangle(wa.Left + 40, wa.Top + 200, 1250, 360);
@@ -225,6 +271,10 @@ static class Harness
         Check("sin fila de funciones la ventana es más baja", kb.Height < hFn, true);
         Check("sin fila de funciones las teclas mantienen su alto", Math.Abs(Find(kb, "a").Rect.Height - keyH) <= keyH * 0.04f, true);
         Check("F1 oculta", Find(kb, "F1").Rect.IsEmpty, true);
+        RectangleF escR = Find(kb, "Esc").Rect;
+        Check("Esc sigue disponible en la barra superior", !escR.IsEmpty && escR.Bottom < Find(kb, "1").Rect.Top, true);
+        Tap(kb, "Esc");
+        Check("pulsar Esc no rompe nada", box.Text, "z7+3.5/*1@`a\\\"ñ-");
         kb.ShowFnRow = true; Pump(100);
         Check("fila de funciones restaurada", Math.Abs(kb.Height - hFn) <= 2, true);
 
@@ -258,6 +308,23 @@ static class Harness
         ClickAt(minBtn);
         Check("botón minimizar", minimized, true);
         Check("teclado oculto", kb.Visible, false);
+
+        // «Mostrar al tocar un campo de texto», con una ventana de OTRO proceso
+        Rectangle dummyBounds = DummyBounds();
+        System.Diagnostics.Process dummy = System.Diagnostics.Process.Start(Application.ExecutablePath, "dummy");
+        Pump(2000);
+        bool shown = false;
+        AutoShow auto = new AutoShow(kb, p => false, delegate { shown = true; });
+        auto.Start();
+        Check("mostrar al tocar: gancho activo", auto.Enabled, true);
+        ClickAt(new Point(dummyBounds.Left + dummyBounds.Width / 2, dummyBounds.Bottom - 45)); // botón
+        Pump(900);
+        Check("mostrar al tocar: un botón NO lo muestra", shown, false);
+        ClickAt(new Point(dummyBounds.Left + dummyBounds.Width / 2, dummyBounds.Top + 60));    // cuadro de texto
+        Pump(1500);
+        Check("mostrar al tocar: un cuadro de texto SÍ lo muestra", shown, true);
+        auto.Stop();
+        try { dummy.Kill(); } catch { }
 
         Console.WriteLine(failures == 0 ? "TODAS LAS PRUEBAS OK" : failures + " FALLOS");
         return failures;

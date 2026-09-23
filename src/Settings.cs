@@ -25,6 +25,8 @@ namespace TecladoFlotante
         public bool FnRow = true;
         public string Layout = KeyLayout.DefaultId;
         public bool AutoUpdate = true;
+        public string ThemeMode = TecladoFlotante.Theme.Auto;   // auto (como Windows) / light / dark
+        public bool AutoShow;                                    // mostrar al tocar un campo de texto
         public string SkippedVersion = "";
         public bool Running;                          // true mientras se ejecuta: si sigue así al arrancar, hubo un cierre inesperado
 
@@ -77,6 +79,9 @@ namespace TecladoFlotante
             string layout;
             if (d.TryGetValue("Layout", out layout) && Array.IndexOf(KeyLayout.Ids, layout) >= 0) s.Layout = layout;
             s.AutoUpdate = Int(d, "AutoUpdate", 1) != 0;
+            string theme;
+            if (d.TryGetValue("Theme", out theme) && TecladoFlotante.Theme.IsValidMode(theme)) s.ThemeMode = theme;
+            s.AutoShow = Int(d, "AutoShow", 0) != 0;
             string skipped;
             if (d.TryGetValue("SkippedVersion", out skipped)) s.SkippedVersion = skipped;
             s.Running = Int(d, "Running", 0) != 0;
@@ -103,6 +108,8 @@ namespace TecladoFlotante
                     "FnRow=" + B(FnRow),
                     "Layout=" + Layout,
                     "AutoUpdate=" + B(AutoUpdate),
+                    "Theme=" + ThemeMode,
+                    "AutoShow=" + B(AutoShow),
                     "SkippedVersion=" + SkippedVersion,
                     "Running=" + B(Running),
                 };

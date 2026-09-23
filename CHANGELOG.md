@@ -2,6 +2,15 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según [SemVer](https://semver.org/lang/es/).
 
+## [1.2.0] - 2026-09-23
+
+### Añadido
+- Tema claro, además del oscuro, y modo automático que sigue al tema de Windows (menú → Tema).
+- Opción «Mostrar al tocar un campo de texto»: al hacer clic o tocar donde se puede escribir, el teclado aparece si estaba oculto.
+
+### Cambiado
+- Sin la fila de funciones, la tecla Esc pasa a la izquierda de la barra superior para no perderla.
+
 ## [1.1.0] - 2026-09-23
 
 ### Añadido

@@ -55,6 +55,7 @@ $buildInfoPath = Join-Path $obj 'BuildInfo.cs'
 $sources = @(Get-ChildItem (Join-Path $root 'src') -Filter *.cs | ForEach-Object FullName) + $buildInfoPath
 $common = @('/nologo', '/target:winexe', '/platform:anycpu', '/optimize+', '/codepage:65001', '/warnaserror+',
     '/r:System.dll', '/r:System.Core.dll', '/r:System.Drawing.dll', '/r:System.Windows.Forms.dll', '/r:System.Web.Extensions.dll',
+    "/lib:$(Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\WPF')", '/r:UIAutomationClient.dll', '/r:UIAutomationTypes.dll', '/r:WindowsBase.dll',
     "/win32manifest:$(Join-Path $root 'app.manifest')")
 
 function Invoke-Csc([string[]]$csArgs) {

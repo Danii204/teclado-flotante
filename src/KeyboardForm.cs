@@ -186,6 +186,14 @@ namespace TecladoFlotante
 
         static int ColorBgr(Color c) { return c.R | (c.G << 8) | (c.B << 16); }
 
+        /// <summary>Repinta con los colores actuales de <see cref="Theme"/> (tras cambiar de tema).</summary>
+        public void ApplyTheme()
+        {
+            BackColor = Theme.Back;
+            if (IsHandleCreated) Native.RoundCorners(Handle, 2, ColorBgr(Theme.Border));
+            Invalidate();
+        }
+
         protected override void WndProc(ref Message m)
         {
             switch (m.Msg)
@@ -242,6 +250,13 @@ namespace TecladoFlotante
                 float y = content.Y + KeyLayout.RowTop(k.Row, showFnRow) * unitH;
                 k.Rect = new RectangleF(content.X + k.X * unitW + gap / 2, y + gap / 2,
                                         k.W * unitW - gap, KeyLayout.RowHeight(k) * unitH - gap);
+            }
+            if (!showFnRow)
+            {
+                // Sin fila de funciones, Esc pasa a la izquierda de la barra superior para no perderlo
+                KeyDef esc = Keys.Find(k => k.Id == "Esc");
+                if (esc != null)
+                    esc.Rect = new RectangleF(strip.X, strip.Y + 1, Math.Min(strip.Height * 2.4f, strip.Width * 0.12f), strip.Height - 2);
             }
         }
 
@@ -598,7 +613,7 @@ namespace TecladoFlotante
             RectangleF r = k.Rect;
             bool latched = IsLatched(k);
             Color fill = k == pressed ? Theme.Accent
-                       : latched ? Theme.AccentDark
+                       : latched ? Theme.Latched
                        : k == hover ? Theme.KeyHover
                        : k.IsSpecial ? Theme.KeySpecial : Theme.Key;
 
@@ -608,7 +623,7 @@ namespace TecladoFlotante
 
             float main = unitH * (k.Row == 0 ? 0.30f : 0.40f);
             float sub = unitH * 0.23f;
-            using (SolidBrush text = new SolidBrush(Theme.Text))
+            using (SolidBrush text = new SolidBrush(k == pressed ? Theme.OnAccent : Theme.Text))
             using (SolidBrush subText = new SolidBrush(Theme.SubText))
             using (SolidBrush altText = new SolidBrush(Theme.AltGrText))
             {
@@ -632,7 +647,7 @@ namespace TecladoFlotante
                     {
                         bool on = k.Kind == KeyKind.Caps ? caps : numLock;
                         float d = Math.Max(4f, unitH * 0.1f);
-                        using (SolidBrush led = new SolidBrush(on ? Color.FromArgb(80, 220, 120) : Theme.KeyHover))
+                        using (SolidBrush led = new SolidBrush(on ? Theme.LedOn : Theme.LedOff))
                             g.FillEllipse(led, r.Right - d * 2.2f, r.Y + d * 1.2f, d, d);
                     }
                     return;

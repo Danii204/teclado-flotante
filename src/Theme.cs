@@ -8,19 +8,68 @@ using System.IO;
 
 namespace TecladoFlotante
 {
-    internal static class Theme
+    /// <summary>Colores del teclado. Modo "auto" sigue el tema de aplicaciones de Windows (claro / oscuro).</summary>
+    public static class Theme
     {
-        public static readonly Color Back = Color.FromArgb(28, 28, 30);
-        public static readonly Color Border = Color.FromArgb(60, 60, 64);
-        public static readonly Color Key = Color.FromArgb(58, 58, 62);
-        public static readonly Color KeySpecial = Color.FromArgb(44, 44, 48);
-        public static readonly Color KeyHover = Color.FromArgb(76, 76, 82);
+        public const string Auto = "auto", Light = "light", Dark = "dark";
+
+        public static Color Back, Border, Key, KeySpecial, KeyHover, Latched, Text, OnAccent, SubText, AltGrText, Grip, LedOn, LedOff;
         public static readonly Color Accent = Color.FromArgb(0, 120, 212);
-        public static readonly Color AccentDark = Color.FromArgb(0, 84, 150);
-        public static readonly Color Text = Color.FromArgb(245, 245, 245);
-        public static readonly Color SubText = Color.FromArgb(150, 150, 156);
-        public static readonly Color AltGrText = Color.FromArgb(110, 185, 255);
-        public static readonly Color Grip = Color.FromArgb(90, 90, 96);
+        public static bool IsDark { get; private set; }
+
+        static Theme() { Apply(Dark); }
+
+        public static bool IsValidMode(string mode) { return mode == Auto || mode == Light || mode == Dark; }
+
+        /// <summary>Tema de aplicaciones de Windows (Configuración → Personalización → Colores).</summary>
+        public static bool WindowsPrefersDark()
+        {
+            try
+            {
+                using (Microsoft.Win32.RegistryKey k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                           @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+                {
+                    object v = k == null ? null : k.GetValue("AppsUseLightTheme");
+                    return v is int && (int)v == 0;
+                }
+            }
+            catch { return false; }
+        }
+
+        public static void Apply(string mode)
+        {
+            IsDark = mode == Dark || (mode != Light && WindowsPrefersDark());
+            OnAccent = Color.White;
+            LedOn = Color.FromArgb(40, 190, 90);
+            if (IsDark)
+            {
+                Back = Color.FromArgb(28, 28, 30);
+                Border = Color.FromArgb(60, 60, 64);
+                Key = Color.FromArgb(58, 58, 62);
+                KeySpecial = Color.FromArgb(44, 44, 48);
+                KeyHover = Color.FromArgb(76, 76, 82);
+                Latched = Color.FromArgb(0, 84, 150);
+                Text = Color.FromArgb(245, 245, 245);
+                SubText = Color.FromArgb(150, 150, 156);
+                AltGrText = Color.FromArgb(110, 185, 255);
+                Grip = Color.FromArgb(90, 90, 96);
+                LedOff = Color.FromArgb(76, 76, 82);
+            }
+            else
+            {
+                Back = Color.FromArgb(232, 233, 236);
+                Border = Color.FromArgb(196, 198, 204);
+                Key = Color.FromArgb(255, 255, 255);
+                KeySpecial = Color.FromArgb(245, 246, 248);
+                KeyHover = Color.FromArgb(226, 238, 252);
+                Latched = Color.FromArgb(190, 218, 246);
+                Text = Color.FromArgb(26, 26, 28);
+                SubText = Color.FromArgb(112, 112, 120);
+                AltGrText = Color.FromArgb(0, 95, 184);
+                Grip = Color.FromArgb(170, 172, 180);
+                LedOff = Color.FromArgb(200, 202, 208);
+            }
+        }
 
         public const string TextFamily = "Segoe UI";
         static string iconFamily;

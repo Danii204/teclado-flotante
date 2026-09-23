@@ -2,7 +2,8 @@
 
 Teclado en pantalla para Windows 10 y 11, pensado para sustituir a los que trae Windows: se coloca en **cualquier parte de la pantalla** (también arriba del todo), se **redimensiona libremente**, ocupa lo mínimo en marcos y **nunca roba el foco** a la aplicación en la que estás escribiendo.
 
-![Teclado Flotante](docs/captura.png)
+![Teclado Flotante, tema oscuro](docs/captura.png)
+![Teclado Flotante, tema claro](docs/captura-claro.png)
 
 ## Descarga
 
@@ -32,7 +33,9 @@ Se instala solo para tu usuario, se abre al terminar y, a partir de entonces, ar
 ### Opciones (menú)
 
 - **Distribución:** Español (España) o English (US).
-- **Bloque numérico** y **fila de funciones** (Esc, F1–F12): se pueden ocultar; la ventana se ajusta y las teclas mantienen su tamaño.
+- **Tema:** automático (sigue al tema de Windows), claro u oscuro.
+- **Mostrar al tocar un campo de texto:** si está activado, al hacer clic o tocar donde se puede escribir, el teclado aparece solo.
+- **Bloque numérico** y **fila de funciones** (F1–F12): se pueden ocultar; la ventana se ajusta y las teclas mantienen su tamaño. Sin la fila de funciones, Esc pasa a la barra superior.
 - Siempre encima, opacidad (también con la rueda del ratón sobre la barra superior), botón flotante al minimizar, iniciar con Windows.
 - **Recordar la posición al reiniciar.** Por defecto, cada vez que el programa arranca el teclado aparece **centrado** con el **tamaño que tenías guardado**; así, pase lo que pase, al volver a abrirlo siempre está a la vista.
 
@@ -44,7 +47,7 @@ El programa comprueba cada 12 horas si hay una versión nueva en [Releases](http
 
 - **No recopila ni envía ningún dato.** No hay telemetría, estadísticas ni cuentas.
 - La única conexión a Internet es una consulta anónima a `api.github.com` para ver si hay una versión nueva (y la descarga del instalador si aceptas actualizar). Se puede desactivar en el menú.
-- No registra lo que escribes. El registro de errores (`%APPDATA%\TecladoFlotante\log.txt`) solo contiene mensajes técnicos, se queda en tu equipo y nunca se envía.
+- No registra lo que escribes. La opción «mostrar al tocar un campo de texto» solo detecta que hubo un clic y si el elemento enfocado es editable; no lee su contenido. El registro de errores (`%APPDATA%\TecladoFlotante\log.txt`) solo contiene mensajes técnicos, se queda en tu equipo y nunca se envía.
 
 ## Robustez
 
