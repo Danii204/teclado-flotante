@@ -17,7 +17,8 @@ switch ($Mode) {
     'render' { & "$t\Harness.exe" render "$t\img" }
     'unit'   {
         & "$t\Harness.exe" unit; $u = $LASTEXITCODE
-        & "$t\Harness.exe" tray;  exit ($u + $LASTEXITCODE)   # arranque completo de la app (sin raton)
+        & "$t\Harness.exe" tray;   $u += $LASTEXITCODE   # arranque completo de la app (sin raton)
+        & "$t\Harness.exe" dialog; exit ($u + $LASTEXITCODE) # avisos siempre por encima del teclado
     }
     default  { & "$t\Harness.exe" }
 }

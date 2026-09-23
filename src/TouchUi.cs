@@ -101,16 +101,40 @@ namespace TecladoFlotante
         public override Color CheckPressedBackground { get { return Theme.Accent; } }
     }
 
-    /// <summary>Ventana de actualización para tablet: mensaje claro y dos botones grandes.</summary>
-    public class UpdateDialog : Form
+    /// <summary>
+    /// Aviso para tablet que sustituye a MessageBox: siempre por encima de todo (también del teclado,
+    /// que va «siempre encima»), colocado donde no lo tape el teclado y con botones grandes.
+    /// MessageBox no sirve: queda debajo del teclado y además lo bloquea, y sin teclado físico no hay salida.
+    /// </summary>
+    public class TouchDialog : Form
     {
-        public static bool Ask(string newVersion, string currentVersion)
+        /// <summary>Área que el aviso debe evitar tapar (el teclado o el botón flotante). Vacía si no hay.</summary>
+        public static Func<Rectangle> AvoidArea = () => Rectangle.Empty;
+
+        /// <summary>
+        /// Ventana propietaria (el teclado, si está visible). Una ventana «propiedad» de otra queda SIEMPRE
+        /// por encima de ella: aunque el teclado vuelva a ponerse delante, no puede tapar el aviso.
+        /// </summary>
+        public static Func<Form> OwnerWindow = () => null;
+
+        /// <summary>Muestra el aviso y espera. Devuelve true si se pulsa el botón principal.</summary>
+        public static bool Show(string title, string message, string primary, string secondary)
         {
-            using (UpdateDialog d = new UpdateDialog(newVersion, currentVersion))
-                return d.ShowDialog() == DialogResult.OK;
+            using (TouchDialog d = new TouchDialog(title, message, primary, secondary))
+            {
+                Form owner = OwnerWindow();
+                if (owner != null && (!owner.Visible || owner.IsDisposed)) owner = null;
+                d.PlaceAvoiding(owner != null ? owner.Bounds : AvoidArea());
+                return (owner != null ? d.ShowDialog(owner) : d.ShowDialog()) == DialogResult.OK;
+            }
         }
 
-        public UpdateDialog(string newVersion, string currentVersion)
+        public static void Info(string title, string message)
+        {
+            Show(title, message, "Aceptar", null);
+        }
+
+        public TouchDialog(string title, string message, string primary, string secondary)
         {
             Text = "Teclado Flotante";
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -125,31 +149,64 @@ namespace TecladoFlotante
 
             float s = DeviceDpi / 96f;
             Func<float, int> px = v => (int)Math.Round(v * s);
-            ClientSize = new Size(px(460), px(250));
+            int width = px(480), margin = px(24), textW = width - 2 * margin;
 
-            Label title = new Label
-            {
-                Text = "Hay una versión nueva",
-                Font = new Font(Theme.TextFamily, 17f, FontStyle.Bold),
-                AutoSize = false,
-                Bounds = new Rectangle(px(24), px(20), px(412), px(40)),
-            };
+            Font titleFont = new Font(Theme.TextFamily, 17f, FontStyle.Bold);
+            int titleH = TextRenderer.MeasureText(title, titleFont, new Size(textW, int.MaxValue), TextFormatFlags.WordBreak).Height;
+            int bodyH = string.IsNullOrEmpty(message) ? 0
+                : TextRenderer.MeasureText(message, Font, new Size(textW, int.MaxValue), TextFormatFlags.WordBreak).Height;
+
+            Label titleLabel = new Label { Text = title, Font = titleFont, AutoSize = false, Bounds = new Rectangle(margin, px(20), textW, titleH) };
             Label body = new Label
             {
-                Text = "Versión " + newVersion + " (ahora tienes la " + currentVersion + ").\n" +
-                       "El teclado se cerrará un momento y se abrirá solo.",
-                AutoSize = false,
-                ForeColor = Theme.SubText,
-                Bounds = new Rectangle(px(24), px(66), px(412), px(80)),
+                Text = message, AutoSize = false, ForeColor = Theme.SubText,
+                Bounds = new Rectangle(margin, titleLabel.Bottom + px(8), textW, bodyH),
             };
-            Button update = MakeButton("Actualizar ahora", true, new Rectangle(px(24), px(166), px(250), px(58)));
-            update.DialogResult = DialogResult.OK;
-            Button later = MakeButton("Más tarde", false, new Rectangle(px(286), px(166), px(150), px(58)));
-            later.DialogResult = DialogResult.Cancel;
+            int buttonsTop = body.Bottom + px(22), buttonH = px(58);
 
-            Controls.AddRange(new Control[] { title, body, update, later });
-            AcceptButton = update;
-            CancelButton = later;
+            Button ok;
+            if (secondary == null)
+            {
+                ok = MakeButton(primary, true, new Rectangle(width - margin - px(200), buttonsTop, px(200), buttonH));
+                CancelButton = ok;
+            }
+            else
+            {
+                ok = MakeButton(primary, true, new Rectangle(margin, buttonsTop, px(250), buttonH));
+                Button cancel = MakeButton(secondary, false, new Rectangle(ok.Right + px(12), buttonsTop, width - margin - ok.Right - px(12), buttonH));
+                cancel.DialogResult = DialogResult.Cancel;
+                Controls.Add(cancel);
+                CancelButton = cancel;
+            }
+            ok.DialogResult = DialogResult.OK;
+            AcceptButton = ok;
+            Controls.AddRange(new Control[] { titleLabel, body, ok });
+            ClientSize = new Size(width, buttonsTop + buttonH + margin);
+        }
+
+        /// <summary>Centrado en la pantalla; si así tapa (o queda tapado por) el teclado, se pone encima o debajo de él.</summary>
+        public void PlaceAvoiding(Rectangle avoid)
+        {
+            Screen screen = avoid.IsEmpty ? Screen.PrimaryScreen : Screen.FromRectangle(avoid);
+            Rectangle wa = screen.WorkingArea;
+            Rectangle r = new Rectangle(wa.Left + (wa.Width - Width) / 2, wa.Top + (wa.Height - Height) / 2, Width, Height);
+            if (!avoid.IsEmpty && r.IntersectsWith(avoid))
+            {
+                int above = avoid.Top - wa.Top, below = wa.Bottom - avoid.Bottom;
+                if (above >= Height + 16) r.Y = avoid.Top - Height - 16;
+                else if (below >= Height + 16) r.Y = avoid.Bottom + 16;
+                else r.Y = above >= below ? wa.Top + 8 : wa.Bottom - Height - 8; // no cabe: el más despejado (y queda encima)
+            }
+            StartPosition = FormStartPosition.Manual;
+            Location = r.Location;
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            // Por si otra ventana «siempre encima» se adelantó: al frente de todo
+            Native.SetWindowPos(Handle, Native.HWND_TOPMOST, 0, 0, 0, 0, Native.SWP_NOMOVE | Native.SWP_NOSIZE);
+            Activate();
         }
 
         static Button MakeButton(string text, bool primary, Rectangle bounds)

@@ -67,6 +67,10 @@ namespace TecladoFlotante
                 delegate { if (!kb.Visible && settings.AutoShow) ShowKeyboard(); });
             if (settings.AutoShow) autoShow.Start();
 
+            // Los avisos se colocan donde no los tape el teclado (o el botón flotante)
+            TouchDialog.AvoidArea = () => kb.Visible ? kb.Bounds : (bubble.Visible ? bubble.Bounds : Rectangle.Empty);
+            TouchDialog.OwnerWindow = () => kb.Visible ? kb : null;
+
             menu = BuildMenu();
             TouchMenu.Style(menu);
             tray = new NotifyIcon();
@@ -296,14 +300,13 @@ namespace TecladoFlotante
             if (error != null)
             {
                 Log.Error("No se pudo comprobar si hay actualizaciones", error);
-                if (manual) MessageBox.Show("No se pudo comprobar si hay actualizaciones.\nRevisa la conexión a Internet.\n\n" + error.Message,
-                    Installer.AppName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                if (manual) TouchDialog.Info("No se pudo comprobar",
+                    "Revisa la conexión a Internet y vuelve a intentarlo.\n\nDetalle: " + error.Message);
                 return;
             }
             if (!Updater.IsNewer(r))
             {
-                if (manual) MessageBox.Show("Tienes la última versión (" + BuildInfo.DisplayVersion + ").", Installer.AppName,
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (manual) TouchDialog.Info("Ya está actualizado", "Tienes la última versión (" + BuildInfo.DisplayVersion + ").");
                 return;
             }
 
@@ -322,7 +325,10 @@ namespace TecladoFlotante
             ReleaseInfo r = availableUpdate;
             if (r == null || updating) return;
             // «Más tarde» deja el botón «Actualizar» visible para cuando se quiera
-            if (!UpdateDialog.Ask(r.Version.ToString(), BuildInfo.DisplayVersion)) return;
+            if (!TouchDialog.Show("Hay una versión nueva",
+                    "Versión " + r.Version + " (ahora tienes la " + BuildInfo.DisplayVersion + ").\n" +
+                    "El teclado se cerrará un momento y se abrirá solo.",
+                    "Actualizar ahora", "Más tarde")) return;
 
             updating = true;
             miUpdate.Enabled = false;
@@ -358,8 +364,9 @@ namespace TecladoFlotante
             miUpdate.Enabled = true;
             miUpdate.Text = "Actualizar a la versión " + r.Version;
             kb.UpdateLabel = "Actualizar";
-            if (MessageBox.Show("No se pudo actualizar:\n" + error.Message + "\n\n¿Abrir la página de descargas para hacerlo a mano?",
-                    Installer.AppName, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+            if (TouchDialog.Show("No se pudo actualizar",
+                    "Puedes volver a intentarlo con el botón «Actualizar», o descargar la versión nueva desde la página del proyecto.\n\nDetalle: " + error.Message,
+                    "Abrir la página", "Cerrar"))
                 OpenUrl(r.PageUrl);
         }
 
@@ -524,19 +531,16 @@ namespace TecladoFlotante
 
         void ShowAbout()
         {
-            string text = "Teclado Flotante " + BuildInfo.DisplayVersion + "\n" +
-                          "Teclado en pantalla flotante para Windows.\n\n" +
+            string text = "Teclado en pantalla flotante para Windows.\n\n" +
                           (BuildInfo.IsBeta && BuildInfo.ProjectUrl.Length > 0
                               ? "Beta abierta: si encuentras un fallo, cuéntalo en " + BuildInfo.ProjectUrl + "/issues\n\n" : "") +
                           (string.IsNullOrEmpty(BuildInfo.Author) ? "" : "Autor: " + BuildInfo.Author + "\n") +
                           (string.IsNullOrEmpty(BuildInfo.ProjectUrl) ? "" : BuildInfo.ProjectUrl + "\n") +
                           "\nNo recopila ni envía ningún dato. Solo consulta GitHub para buscar nuevas versiones.\n" +
                           "Registro de errores (local): " + Log.FilePath;
-            if (string.IsNullOrEmpty(BuildInfo.ProjectUrl))
-                MessageBox.Show(text, Installer.AppName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-            else if (MessageBox.Show(text + "\n\n¿Abrir la página del proyecto?", Installer.AppName,
-                         MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
-                OpenUrl(BuildInfo.ProjectUrl);
+            string title = "Teclado Flotante " + BuildInfo.DisplayVersion;
+            if (string.IsNullOrEmpty(BuildInfo.ProjectUrl)) TouchDialog.Info(title, text);
+            else if (TouchDialog.Show(title, text, "Abrir la página", "Cerrar")) OpenUrl(BuildInfo.ProjectUrl);
         }
 
         // ------------------------------------------------------------------ salida

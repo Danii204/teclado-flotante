@@ -2,6 +2,14 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según [SemVer](https://semver.org/lang/es/).
 
+## [1.3.5] - 2026-09-23
+
+### Corregido
+- Con el teclado en el centro de la pantalla, avisos como «Tienes la última versión» quedaban debajo del teclado y no se podía tocar ni el aviso ni el teclado. Todos los avisos (también los del instalador) son ahora ventanas propias para tablet: siempre por encima del teclado, colocadas donde no lo tapen y con botones grandes.
+
+### Cambiado
+- README principal en inglés; la versión en español está en `README.es.md`.
+
 ## [1.3.4] - 2026-09-23
 
 ### Cambiado

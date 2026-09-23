@@ -42,11 +42,12 @@ namespace TecladoFlotante
         /// <param name="relaunchHidden">Abrirla oculta en la bandeja (si estaba oculta antes de actualizar).</param>
         public static void Install(bool silent, bool relaunch, bool relaunchHidden)
         {
-            if (!silent && MessageBox.Show(
-                    "Se instalará " + AppName + " para tu usuario.\n\n" +
-                    "• Se iniciará automáticamente (oculto) al encender el PC.\n" +
-                    "• Muestra u oculta el teclado con Ctrl+Alt+K o desde el icono de la bandeja.\n\n¿Continuar?",
-                    AppName + " " + Version, MessageBoxButtons.OKCancel, MessageBoxIcon.Information) != DialogResult.OK)
+            Theme.Apply(Settings.Load().ThemeMode); // los avisos con el mismo tema que el teclado
+            if (!silent && !TouchDialog.Show("Instalar " + AppName + " " + Version,
+                    "Se instalará para tu usuario (no hace falta desinstalar la versión anterior).\n\n" +
+                    "• Se pondrá un acceso directo en el escritorio.\n" +
+                    "• Se iniciará solo al encender el PC.",
+                    "Instalar", "Cancelar"))
                 return;
 
             try
@@ -97,19 +98,18 @@ namespace TecladoFlotante
             catch (Exception ex)
             {
                 Log.Error("Fallo en la instalación", ex);
-                if (!silent) MessageBox.Show(
-                    "No se pudo instalar.\n\n" +
+                if (!silent) TouchDialog.Info("No se pudo instalar",
                     "Cierra el teclado (botón ⋯ → Salir) y vuelve a abrir el instalador. " +
                     "Si sigue fallando, reinicia el equipo e inténtalo de nuevo.\n\n" +
-                    "Detalle: " + ex.Message, AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    "Detalle: " + ex.Message);
                 Environment.ExitCode = 1;
                 return;
             }
 
             Log.Info("Instalada la versión " + Version);
             if (!silent)
-                MessageBox.Show(AppName + " se ha instalado.\n\nAhora se abrirá el teclado. Ctrl+Alt+K lo muestra u oculta.",
-                    AppName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                TouchDialog.Info("Instalado", "Ahora se abrirá el teclado.\n\n" +
+                    "Para abrirlo más adelante, usa el acceso directo «" + AppName + "» del escritorio o el icono de la barra de tareas.");
             if (!silent || relaunch)
                 Process.Start(new ProcessStartInfo(InstalledExe, relaunchHidden ? "--hidden --updated" : (silent ? "--updated" : ""))
                 {
@@ -120,8 +120,9 @@ namespace TecladoFlotante
 
         public static void Uninstall(bool silent)
         {
-            if (!silent && MessageBox.Show("¿Desinstalar " + AppName + "?", AppName,
-                    MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK)
+            Theme.Apply(Settings.Load().ThemeMode);
+            if (!silent && !TouchDialog.Show("¿Desinstalar " + AppName + "?",
+                    "Se borrarán el programa, sus ajustes y los accesos directos.", "Desinstalar", "Cancelar"))
                 return;
 
             StopRunning();
@@ -143,7 +144,7 @@ namespace TecladoFlotante
             }
             catch { }
 
-            if (!silent) MessageBox.Show(AppName + " se ha desinstalado.", AppName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (!silent) TouchDialog.Info("Desinstalado", AppName + " se ha desinstalado.");
         }
 
         /// <summary>Cierra la instancia que esté en marcha (para actualizar o desinstalar).</summary>

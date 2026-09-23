@@ -36,6 +36,7 @@ static class Harness
             if (args.Length > 0 && args[0] == "unit") return Unit();
             if (args.Length > 0 && args[0] == "dummy") { Dummy(); return 0; }
             if (args.Length > 0 && args[0] == "tray") return TraySmoke();
+            if (args.Length > 0 && args[0] == "dialog") return DialogOverKeyboard();
             if (args.Length > 0 && args[0] == "sleep") { Thread.Sleep(20000); return 0; }
             Unit();
             return E2E(); // devuelve el total de fallos acumulado
@@ -44,6 +45,50 @@ static class Harness
         {
             try { System.IO.Directory.Delete(data, true); } catch { }
         }
+    }
+
+    [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(Point p);
+    [DllImport("user32.dll")] static extern IntPtr GetAncestor(IntPtr hwnd, uint flags);
+
+    /// <summary>
+    /// Fallo real: con el teclado centrado y «siempre encima», el aviso «Tienes la última versión» quedaba
+    /// debajo y no se podía tocar nada. Comprueba que el botón del aviso es lo que hay bajo el dedo.
+    /// </summary>
+    static int DialogOverKeyboard()
+    {
+        Rectangle wa = Screen.PrimaryScreen.WorkingArea;
+        Rectangle[] keyboards =
+        {
+            new Rectangle(wa.Left + (wa.Width - 1100) / 2, wa.Top + (wa.Height - 380) / 2, 1100, 380), // centrado (el caso del fallo)
+            new Rectangle(wa.Left, wa.Top + 20, wa.Width, wa.Height - 40),                               // casi toda la pantalla
+        };
+        string[] names = { "teclado centrado", "teclado a pantalla casi completa" };
+        for (int i = 0; i < keyboards.Length; i++)
+        {
+            KeyboardForm kb = new KeyboardForm();
+            kb.Bounds = keyboards[i];
+            kb.KeyboardTopMost = true;
+            kb.ShowKeyboard();
+            Pump(300);
+
+            TouchDialog d = new TouchDialog("Ya está actualizado", "Tienes la última versión (1.3.5 beta).", "Aceptar", null);
+            d.PlaceAvoiding(kb.Bounds);
+            d.Show(kb); // como en la app: el aviso pertenece al teclado
+            Pump(500);
+            kb.ShowKeyboard(); // el teclado vuelve a pedir ir delante: el aviso debe seguir encima
+            Pump(300);
+
+            Button ok = d.AcceptButton as Button;
+            Point center = ok.PointToScreen(new Point(ok.Width / 2, ok.Height / 2));
+            IntPtr hit = WindowFromPoint(center);
+            bool clickable = hit == ok.Handle || GetAncestor(hit, 2 /* GA_ROOT */) == d.Handle;
+            Check("aviso con " + names[i] + ": el botón se puede tocar", clickable, true);
+            if (i == 0) Check("aviso con teclado centrado: no lo tapa", d.Bounds.IntersectsWith(kb.Bounds), false);
+            d.Close(); d.Dispose();
+            kb.Close(); kb.Dispose();
+            Pump(200);
+        }
+        return failures;
     }
 
     /// <summary>Arranca la aplicación completa (bandeja, menús, teclado) oculta y la cierra.</summary>
@@ -200,7 +245,9 @@ static class Harness
         foreach (string mode in new[] { Theme.Dark, Theme.Light })
         {
             Theme.Apply(mode);
-            using (UpdateDialog d = new UpdateDialog("1.3.0", "1.2.0 beta"))
+            using (TouchDialog d = new TouchDialog("Hay una versión nueva",
+                       "Versión 1.3.0 (ahora tienes la 1.2.0 beta).\nEl teclado se cerrará un momento y se abrirá solo.",
+                       "Actualizar ahora", "Más tarde"))
             {
                 Rectangle wa0 = Screen.PrimaryScreen.WorkingArea;
                 d.StartPosition = FormStartPosition.Manual;

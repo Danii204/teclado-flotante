@@ -1,96 +1,101 @@
-# Teclado Flotante
+# Teclado Flotante — Floating On-Screen Keyboard for Windows
 
-> 🧪 **Beta abierta.** Ya se puede usar a diario, pero puede tener fallos. Si encuentras alguno, [abre un issue](https://github.com/Danii204/teclado-flotante/issues) contando qué hacías y, si puedes, adjunta el registro `%APPDATA%\TecladoFlotante\log.txt`.
+**English** · [Español](README.es.md)
 
-Teclado en pantalla para Windows 10 y 11, pensado para sustituir a los que trae Windows: se coloca en **cualquier parte de la pantalla** (también arriba del todo), se **redimensiona libremente**, ocupa lo mínimo en marcos y **nunca roba el foco** a la aplicación en la que estás escribiendo.
+> 🧪 **Open beta.** It is ready for daily use, but you may still find bugs. If you do, please [open an issue](https://github.com/Danii204/teclado-flotante/issues) describing what you were doing and, if possible, attach the log file `%APPDATA%\TecladoFlotante\log.txt`.
 
-![Teclado Flotante, tema oscuro](docs/captura.png)
-![Teclado Flotante, tema claro](docs/captura-claro.png)
+A touch-friendly on-screen keyboard for Windows 10 and 11, built as a replacement for the built-in ones: place it **anywhere on the screen** (including the very top), **resize it freely**, keep the frame to a minimum, and it **never steals focus** from the app you are typing in. Designed for tablets and for people who don't want to deal with anything technical: updates install with one tap from the keyboard itself.
 
-## Descarga
+![Teclado Flotante, dark theme](docs/captura.png)
+![Teclado Flotante, light theme](docs/captura-claro.png)
 
-**[⬇ Descargar la última versión](https://github.com/Danii204/teclado-flotante/releases)**: en la versión más reciente, descarga `TecladoFlotante-Setup.exe` (≈ 100 KB, no necesita permisos de administrador).
+## Download
 
-1. Abre `TecladoFlotante-Setup.exe` y pulsa **Aceptar**.
-2. Si Windows muestra *«Windows protegió su PC»*, pulsa **Más información → Ejecutar de todas formas**. Aparece porque el programa no está firmado con un certificado de pago; el código es este mismo repositorio y cada versión publica su huella SHA-256.
+**[⬇ Download the latest version](https://github.com/Danii204/teclado-flotante/releases)** — in the most recent release, download `TecladoFlotante-Setup.exe` (≈ 100 KB, no administrator rights needed).
 
-Se instala solo para tu usuario, crea un acceso directo **Teclado Flotante** en el escritorio, se abre al terminar y, a partir de entonces, arranca solo al encender el PC. Para instalar una versión nueva encima no hace falta desinstalar ni cerrar nada.
+1. Open `TecladoFlotante-Setup.exe` and tap **Instalar** (Install).
+2. If Windows shows *"Windows protected your PC"*, tap **More info → Run anyway**. This appears because the app is not signed with a paid certificate; the source code is this repository and every release publishes its SHA-256 hash.
 
-## Uso
+It installs for the current user only, adds a **Teclado Flotante** shortcut to the desktop, opens when setup finishes and from then on starts automatically with Windows. To install a newer version on top, there is no need to uninstall or close anything.
 
-| Acción | Cómo |
+> The user interface is currently in **Spanish**. Keyboard layouts available: **Spanish (Spain)** and **English (US)**.
+
+## Usage
+
+| Action | How |
 | --- | --- |
-| Mostrar / ocultar | Acceso directo del escritorio, icono de la barra de tareas, botón flotante azul o **Ctrl+Alt+K** |
-| Mover | Arrastra la barra superior o cualquier hueco entre teclas |
-| Cambiar el tamaño | Arrastra cualquier borde o esquina (se guarda automáticamente) |
-| Siempre encima | Botón 📌 de la barra superior |
-| Menú | Botón ⋯ o clic derecho |
+| Show / hide | Desktop shortcut, taskbar icon, blue floating button or **Ctrl+Alt+K** |
+| Move | Drag the top bar or any gap between keys |
+| Resize | Drag any edge or corner (saved automatically) |
+| Always on top | 📌 button on the top bar |
+| Menu | ⋯ button or right-click |
 
-- **Acentos** como en un teclado físico: `´` + `a` = á, `Mayús` + `´` + `u` = ü, también `` ` `` y `^`.
-- **AltGr** para @ # € [ ] { } \ | ~ ¬.
-- **Mayús, Ctrl, Alt, AltGr y Win** quedan activas hasta la siguiente tecla (Ctrl → C = Ctrl+C). Win dos veces abre el menú Inicio.
-- **Bloque numérico** con Bloq Num: desactivado, funciona como flechas, Inicio, Fin, RePág, AvPág, Insert y Supr.
-- Mantener pulsada una tecla la repite.
+- **Dead keys** work like on a physical keyboard: `´` + `a` = á, `Shift` + `´` + `u` = ü, also `` ` `` and `^`.
+- **AltGr** for @ # € [ ] { } \ | ~ ¬.
+- **Shift, Ctrl, Alt, AltGr and Win** stay latched until the next key (Ctrl → C = Ctrl+C). Win twice opens the Start menu.
+- **Numeric keypad** with Num Lock: when off, it works as arrows, Home, End, Page Up/Down, Insert and Delete.
+- Holding a key repeats it.
 
-### Opciones (menú)
+### Settings (dropdown menu)
 
-- **Distribución:** Español (España) o English (US).
-- **Tema:** automático (sigue al tema de Windows), claro u oscuro.
-- **Letra en negrita** para leer mejor las teclas.
-- **Mostrar al tocar un campo de texto:** si está activado, al hacer clic o tocar donde se puede escribir, el teclado aparece solo.
-- **Bloque numérico** y **fila de funciones** (F1–F12): se pueden ocultar; la ventana se ajusta y las teclas mantienen su tamaño. Sin la fila de funciones, Esc pasa a la fila de los números.
-- **Opciones:** siempre encima, opacidad (también con la rueda del ratón sobre la barra superior), botón flotante al minimizar, iniciar con Windows y **qué mostrar al encender el PC** (nada, el botón flotante o el teclado).
-- **Recordar la posición al reiniciar.** Por defecto, cada vez que el programa arranca el teclado aparece **centrado** con el **tamaño que tenías guardado**; así, pase lo que pase, al volver a abrirlo siempre está a la vista.
+- **Layout:** Spanish (Spain) or English (US).
+- **Theme:** automatic (follows Windows), light or dark.
+- **Bold text** for easier reading.
+- **Show when tapping a text field:** the keyboard appears by itself when you tap somewhere you can type.
+- **Numeric keypad** and **function row** (F1–F12) can be hidden; the window adjusts and keys keep their size. Without the function row, Esc moves to the number row.
+- **Options:** always on top, opacity (also with the mouse wheel over the top bar), floating button when minimized, start with Windows, and **what to show at startup** (nothing, the floating button or the keyboard).
+- **Remember position after restart.** By default, every time the app starts the keyboard appears **centered** with the **size you saved**, so it is always visible whatever happened.
 
-## Actualizaciones
+## Updates
 
-Sin entrar en GitHub ni saber nada de informática: cuando hay una versión nueva aparece un botón azul **Actualizar** en la barra del teclado (y un punto naranja en el botón flotante). Un toque en **Actualizar ahora** y listo.
+No need to visit GitHub or know anything about computers: when a new version is available, a blue **Actualizar** (Update) button appears on the keyboard's top bar (and an orange dot on the floating button). Tap **Actualizar ahora** (Update now) and that's it.
 
-El programa comprueba cada 12 horas si hay una versión nueva en [Releases](https://github.com/Danii204/teclado-flotante/releases) (durante la beta abierta, también las marcadas como *Pre-release*). Si la hay, avisa en la bandeja: **un clic** y se descarga, se verifica (SHA-256), se instala y vuelve a abrirse solo. También se puede comprobar a mano desde *Ayuda y actualizaciones → Buscar actualizaciones ahora*, o desactivar el aviso.
+The app checks the [Releases](https://github.com/Danii204/teclado-flotante/releases) page every 12 hours (during the open beta, *Pre-releases* are included). Updates are downloaded, verified (SHA-256), installed, and the keyboard reopens by itself. You can also check manually from *Ayuda y actualizaciones → Buscar actualizaciones ahora*, or turn the notification off.
 
-## Privacidad
+## Privacy
 
-- **No recopila ni envía ningún dato.** No hay telemetría, estadísticas ni cuentas.
-- La única conexión a Internet es una consulta anónima a `api.github.com` para ver si hay una versión nueva (y la descarga del instalador si aceptas actualizar). Se puede desactivar en el menú.
-- No registra lo que escribes. La opción «mostrar al tocar un campo de texto» solo detecta que hubo un clic y si el elemento enfocado es editable; no lee su contenido. El registro de errores (`%APPDATA%\TecladoFlotante\log.txt`) solo contiene mensajes técnicos, se queda en tu equipo y nunca se envía.
+- **No data is collected or sent.** No telemetry, analytics or accounts.
+- The only Internet connection is an anonymous request to `api.github.com` to check for new versions (plus downloading the installer if you accept an update). It can be turned off in the menu.
+- It never records what you type. *Show when tapping a text field* only detects that a click happened and whether the focused element is editable; it does not read its content. The error log (`%APPDATA%\TecladoFlotante\log.txt`) contains technical messages only, stays on your device and is never sent.
 
-## Robustez
+## Robustness
 
-- No roba el foco (`WS_EX_NOACTIVATE`): lo que tecleas va siempre a la ventana en la que estabas.
-- Ajustes guardados de forma atómica: un apagado repentino no los corrompe; si el archivo está dañado se usan valores por defecto.
-- Si el programa falla, se registra el error y se vuelve a abrir solo, centrado.
-- Si desconectas un monitor o cambias la resolución, el teclado vuelve a la vista.
-- Una sola instancia: abrirlo otra vez solo muestra el teclado que ya está en marcha.
+- Never steals focus (`WS_EX_NOACTIVATE`): keystrokes always go to the window you were using.
+- Messages and dialogs always appear above the keyboard, where it does not cover them, with large buttons.
+- Settings are saved atomically: a sudden power-off cannot corrupt them; a damaged file falls back to defaults.
+- If the app crashes, the error is logged and it reopens by itself, centered.
+- If a monitor is disconnected or the resolution changes, the keyboard moves back into view.
+- Single instance: opening it again just shows the keyboard that is already running.
 
-## Desinstalar
+## Uninstall
 
-*Configuración → Aplicaciones → Aplicaciones instaladas → Teclado Flotante → Desinstalar.* Se eliminan el programa, sus ajustes, el acceso del menú Inicio y el arranque automático.
+*Settings → Apps → Installed apps → Teclado Flotante → Uninstall.* The app, its settings, the Start menu and desktop shortcuts and the autostart entry are removed.
 
-## Limitaciones conocidas
+## Known limitations
 
-- No puede escribir en programas que se ejecutan **como administrador** (por ejemplo, el Administrador de tareas): Windows lo impide a cualquier programa sin firma especial (UIAccess).
-- En Windows 11 el programa pide que su icono se vea en la barra de tareas; si alguien lo movió antes a la flecha `^`, se respeta esa elección (se puede volver a arrastrar a la barra).
+- It cannot type into apps running **as administrator** (e.g. Task Manager): Windows blocks this for any app without special signing (UIAccess).
+- On Windows 11 the app asks for its icon to be shown on the taskbar; if someone previously moved it into the `^` overflow, that choice is respected (it can be dragged back).
 
-## Compilar desde el código
+## Building from source
 
-No hace falta instalar nada: se usa el compilador de C# de .NET Framework 4.8, incluido en Windows.
+Nothing to install: it uses the C# compiler of .NET Framework 4.8, which ships with Windows.
 
 ```powershell
-.\build.ps1          # genera dist\TecladoFlotante-Setup.exe
-.\test.ps1 unit      # pruebas sin ratón
-.\test.ps1           # pruebas completas: mueve el ratón y escribe en una ventana de prueba
-.\test.ps1 render    # capturas del teclado en obj\test\img
+.\build.ps1          # builds dist\TecladoFlotante-Setup.exe
+.\test.ps1 unit      # tests without mouse (also run by GitHub Actions)
+.\test.ps1           # full tests: moves the mouse and types into a test window
+.\test.ps1 render    # keyboard screenshots in obj\test\img
 ```
 
-Estructura: `src/` código de la aplicación, `tests/` banco de pruebas, `.github/workflows/` compilación y publicación automáticas.
+Layout: `src/` application code, `tests/` test harness, `.github/workflows/` automated build and release.
 
-### Publicar una versión
+### Publishing a release
 
-1. Añade en `CHANGELOG.md` la sección `## [X.Y.Z] - AAAA-MM-DD`.
-2. Ejecuta `.\release.ps1 X.Y.Z`. Mientras el archivo `CHANNEL` diga `beta`, se publica como *Pre-release* con la etiqueta `vX.Y.Z-beta`; cámbialo a `stable` para la primera versión estable.
+1. Add a `## [X.Y.Z] - YYYY-MM-DD` section to `CHANGELOG.md`.
+2. Run `.\release.ps1 X.Y.Z`. While the `CHANNEL` file says `beta`, it is published as a *Pre-release* tagged `vX.Y.Z-beta`; change it to `stable` for the first stable release.
 
-GitHub Actions compila, prueba y crea la Release con el instalador y su SHA-256; los equipos con el programa instalado recibirán el aviso.
+GitHub Actions builds, tests and creates the release with the installer and its SHA-256; installed copies get the update notification.
 
-## Licencia
+## License
 
 [MIT](LICENSE) © [Danii204](https://github.com/Danii204)
