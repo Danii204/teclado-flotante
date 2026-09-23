@@ -9,18 +9,18 @@ Teclado en pantalla para Windows 10 y 11, pensado para sustituir a los que trae 
 
 ## Descarga
 
-**[⬇ Descargar la última versión](https://github.com/Danii204/teclado-flotante/releases)**: en la versión más reciente, descarga `TecladoFlotante-Setup.exe` (≈ 80 KB, no necesita permisos de administrador).
+**[⬇ Descargar la última versión](https://github.com/Danii204/teclado-flotante/releases)**: en la versión más reciente, descarga `TecladoFlotante-Setup.exe` (≈ 100 KB, no necesita permisos de administrador).
 
 1. Abre `TecladoFlotante-Setup.exe` y pulsa **Aceptar**.
 2. Si Windows muestra *«Windows protegió su PC»*, pulsa **Más información → Ejecutar de todas formas**. Aparece porque el programa no está firmado con un certificado de pago; el código es este mismo repositorio y cada versión publica su huella SHA-256.
 
-Se instala solo para tu usuario, se abre al terminar y, a partir de entonces, arranca oculto al encender el PC.
+Se instala solo para tu usuario, crea un acceso directo **Teclado Flotante** en el escritorio, se abre al terminar y, a partir de entonces, arranca solo al encender el PC. Para instalar una versión nueva encima no hace falta desinstalar ni cerrar nada.
 
 ## Uso
 
 | Acción | Cómo |
 | --- | --- |
-| Mostrar / ocultar | **Ctrl+Alt+K**, clic en el icono de la bandeja o en el botón flotante azul |
+| Mostrar / ocultar | Acceso directo del escritorio, icono de la barra de tareas, botón flotante azul o **Ctrl+Alt+K** |
 | Mover | Arrastra la barra superior o cualquier hueco entre teclas |
 | Cambiar el tamaño | Arrastra cualquier borde o esquina (se guarda automáticamente) |
 | Siempre encima | Botón 📌 de la barra superior |
@@ -36,9 +36,10 @@ Se instala solo para tu usuario, se abre al terminar y, a partir de entonces, ar
 
 - **Distribución:** Español (España) o English (US).
 - **Tema:** automático (sigue al tema de Windows), claro u oscuro.
+- **Letra en negrita** para leer mejor las teclas.
 - **Mostrar al tocar un campo de texto:** si está activado, al hacer clic o tocar donde se puede escribir, el teclado aparece solo.
 - **Bloque numérico** y **fila de funciones** (F1–F12): se pueden ocultar; la ventana se ajusta y las teclas mantienen su tamaño. Sin la fila de funciones, Esc pasa a la fila de los números.
-- Siempre encima, opacidad (también con la rueda del ratón sobre la barra superior), botón flotante al minimizar, iniciar con Windows.
+- **Opciones:** siempre encima, opacidad (también con la rueda del ratón sobre la barra superior), botón flotante al minimizar, iniciar con Windows y **qué mostrar al encender el PC** (nada, el botón flotante o el teclado).
 - **Recordar la posición al reiniciar.** Por defecto, cada vez que el programa arranca el teclado aparece **centrado** con el **tamaño que tenías guardado**; así, pase lo que pase, al volver a abrirlo siempre está a la vista.
 
 ## Actualizaciones
@@ -68,7 +69,7 @@ El programa comprueba cada 12 horas si hay una versión nueva en [Releases](http
 ## Limitaciones conocidas
 
 - No puede escribir en programas que se ejecutan **como administrador** (por ejemplo, el Administrador de tareas): Windows lo impide a cualquier programa sin firma especial (UIAccess).
-- Windows 11 esconde los iconos nuevos de la bandeja dentro de la flecha `^`; arrástralo a la barra de tareas para tenerlo siempre visible.
+- En Windows 11 el programa pide que su icono se vea en la barra de tareas; si alguien lo movió antes a la flecha `^`, se respeta esa elección (se puede volver a arrastrar a la barra).
 
 ## Compilar desde el código
 
