@@ -23,7 +23,7 @@ jobs:
     permissions:
       contents: write   # necesario solo para crear la Release al subir una etiqueta
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Determinar la versión
         id: ver
@@ -54,7 +54,7 @@ jobs:
           "$h  TecladoFlotante-Setup.exe" | Set-Content dist/TecladoFlotante-Setup.exe.sha256 -Encoding ascii -NoNewline
           Write-Host "SHA-256: $h"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: TecladoFlotante-${{ steps.ver.outputs.version }}
           path: |
@@ -82,7 +82,8 @@ jobs:
           )
           $beta = '${{ steps.ver.outputs.prerelease }}' -eq '1'
           if ($beta) {
-            $lines = @('> **Beta abierta.** Puede tener fallos: si encuentras alguno, abre un [issue](https://github.com/' + $env:GITHUB_REPOSITORY + '/issues). Las betas se actualizan solas a la siguiente beta.', '') + $lines
+            $banner = '> **Beta abierta.** Puede tener fallos: si encuentras alguno, abre un [issue](https://github.com/' + $env:GITHUB_REPOSITORY + '/issues). Las betas se actualizan solas a la siguiente beta.'
+            $lines = @($banner, '') + $lines
           }
           $lines | Set-Content notes.md -Encoding utf8
           $title = "Teclado Flotante $v" + $(if ($beta) { ' (beta abierta)' } else { '' })
