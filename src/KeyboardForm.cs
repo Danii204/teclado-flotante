@@ -133,6 +133,22 @@ namespace TecladoFlotante
 
         FontStyle TextStyle { get { return boldText ? FontStyle.Bold : FontStyle.Regular; } }
 
+        /// <summary>Tamaños de letra: 0 = normal (el de siempre), 1 = grande, 2 = muy grande.</summary>
+        public static readonly float[] TextScales = { 1f, 1.3f, 1.6f };
+        float textScale = 1f;
+        int textSize;
+
+        public int TextSize
+        {
+            get { return textSize; }
+            set
+            {
+                textSize = Math.Max(0, Math.Min(TextScales.Length - 1, value));
+                textScale = TextScales[textSize];
+                Invalidate();
+            }
+        }
+
         public string LayoutId
         {
             get { return layout.Id; }
@@ -679,8 +695,8 @@ namespace TecladoFlotante
             using (SolidBrush b = new SolidBrush(fill))
                 g.FillPath(b, p);
 
-            float main = unitH * (k.Row == 0 && showFnRow ? 0.30f : 0.40f);
-            float sub = unitH * 0.23f;
+            float main = unitH * (k.Row == 0 && showFnRow ? 0.30f : 0.40f) * textScale;
+            float sub = unitH * 0.23f * (1 + (textScale - 1) * 0.5f); // los caracteres secundarios crecen menos
             using (SolidBrush text = new SolidBrush(k == pressed ? Theme.OnAccent : Theme.Text))
             using (SolidBrush subText = new SolidBrush(Theme.SubText))
             using (SolidBrush altText = new SolidBrush(Theme.AltGrText))
@@ -722,7 +738,9 @@ namespace TecladoFlotante
                 if (pending != null && !IsDead(output)) shown = Compose(pending, output) ?? output;
                 DrawFitted(g, shown, Theme.TextFamily, main, text, r);
 
-                if (!k.IsLetter && !altGr)
+                // En «Muy grande» no caben las pistas de las esquinas: el símbolo se ve en grande al pulsar Mayús/AltGr
+                bool hints = textSize < 2;
+                if (hints && !k.IsLetter && !altGr)
                 {
                     string alternate = shift ? k.Normal : k.Shifted;
                     if (alternate != output)
@@ -731,7 +749,7 @@ namespace TecladoFlotante
                         g.DrawString(alternate, sf, subText, r.X + r.Width * 0.08f, r.Y + r.Height * 0.04f);
                     }
                 }
-                if (k.AltGr != null && !altGr)
+                if (hints && k.AltGr != null && !altGr)
                 {
                     Font af = fonts.Get(Theme.TextFamily, sub, TextStyle);
                     SizeF sz = g.MeasureString(k.AltGr, af);
@@ -746,8 +764,9 @@ namespace TecladoFlotante
             FontStyle style = family == Theme.TextFamily ? TextStyle : FontStyle.Regular; // los iconos no tienen negrita
             Font f = fonts.Get(family, px, style);
             SizeF sz = g.MeasureString(s, f);
-            float max = r.Width * 0.9f;
-            if (sz.Width > max) f = fonts.Get(family, px * max / sz.Width, style);
+            // Que quepa a lo ancho y a lo alto (con letra grande en teclas pequeñas)
+            float fit = Math.Min(r.Width * 0.9f / sz.Width, r.Height * 1.15f / sz.Height);
+            if (fit < 1f) f = fonts.Get(family, px * fit, style);
             g.DrawString(s, f, brush, r, center);
         }
 

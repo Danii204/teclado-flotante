@@ -2,6 +2,14 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según [SemVer](https://semver.org/lang/es/).
 
+## [1.3.6] - 2026-09-28
+
+### Añadido
+- **Tamaño de letra** para quien no ve bien las teclas: *Normal* (el de siempre), *Grande* (+30 %) y *Muy grande* (+60 %). En «Muy grande» se ocultan los símbolos pequeños de las esquinas; al pulsar Mayús o AltGr la tecla los muestra en grande.
+
+### Cambiado
+- Nuevo desplegable **Letra** en el menú con el tamaño y la negrita.
+
 ## [1.3.5] - 2026-09-23
 
 ### Corregido

@@ -38,7 +38,7 @@ Se instala solo para tu usuario, crea un acceso directo **Teclado Flotante** en 
 
 - **Distribución:** Español (España) o English (US).
 - **Tema:** automático (sigue al tema de Windows), claro u oscuro.
-- **Letra en negrita** para leer mejor las teclas.
+- **Letra:** tres tamaños (normal, grande y muy grande) y negrita, para leer mejor las teclas.
 - **Mostrar al tocar un campo de texto:** si está activado, al hacer clic o tocar donde se puede escribir, el teclado aparece solo.
 - **Bloque numérico** y **fila de funciones** (F1–F12): se pueden ocultar; la ventana se ajusta y las teclas mantienen su tamaño. Sin la fila de funciones, Esc pasa a la fila de los números.
 - **Opciones:** siempre encima, opacidad (también con la rueda del ratón sobre la barra superior), botón flotante al minimizar, iniciar con Windows y **qué mostrar al encender el PC** (nada, el botón flotante o el teclado).

@@ -22,7 +22,7 @@ namespace TecladoFlotante
         readonly EventWaitHandle showEvent, quitEvent;
         readonly System.Windows.Forms.Timer updateTimer = new System.Windows.Forms.Timer();
         readonly AutoShow autoShow;
-        ToolStripMenuItem miTheme, miBold, miAutoShow, miStartup;
+        ToolStripMenuItem miTheme, miBold, miText, miAutoShow, miStartup;
         ToolStripMenuItem miUpdate, miToggle, miTopMost, miNumpad, miFnRow, miBubble, miRemember, miAutostart, miAutoUpdate, miOpacity, miLayout, miCheckNow;
         ReleaseInfo availableUpdate;
         bool updating, hotkeyOk, exiting;
@@ -45,6 +45,7 @@ namespace TecladoFlotante
             kb.KeyboardTopMost = settings.TopMost;
             kb.Opacity = settings.Opacity / 100.0;
             kb.BoldText = settings.BoldText;
+            kb.TextSize = settings.TextSize;
             IntPtr h = kb.Handle; // crea la ventana (oculta) para poder recibir el atajo global
             hotkeyOk = Native.RegisterHotKey(h, HotkeyId, Native.MOD_CONTROL | Native.MOD_ALT | Native.MOD_NOREPEAT, (uint)Keys.K);
             if (!hotkeyOk) Log.Info("Ctrl+Alt+K está ocupado por otro programa");
@@ -414,12 +415,30 @@ namespace TecladoFlotante
                 miTheme.DropDownItems.Add(item);
             }
 
-            miBold = new ToolStripMenuItem("Letra en negrita", null, delegate
+            miBold = new ToolStripMenuItem("En negrita", null, delegate
             {
                 kb.BoldText = !kb.BoldText;
                 settings.BoldText = kb.BoldText;
                 settings.Save();
             });
+
+            // «Letra»: tamaño (normal / grande / muy grande) y negrita, para quien no ve bien las teclas
+            miText = new ToolStripMenuItem("Letra");
+            string[] sizeNames = { "Tamaño normal", "Grande", "Muy grande" };
+            for (int i = 0; i < sizeNames.Length; i++)
+            {
+                int size = i;
+                ToolStripMenuItem item = new ToolStripMenuItem(sizeNames[i], null, delegate
+                {
+                    kb.TextSize = size;
+                    settings.TextSize = size;
+                    settings.Save();
+                });
+                item.Tag = size;
+                miText.DropDownItems.Add(item);
+            }
+            miText.DropDownItems.Add(new ToolStripSeparator());
+            miText.DropDownItems.Add(miBold);
 
             miAutoShow = new ToolStripMenuItem("Mostrar al tocar un campo de texto", null, delegate
             {
@@ -503,7 +522,7 @@ namespace TecladoFlotante
             m.Items.AddRange(new ToolStripItem[]
             {
                 miUpdate, miToggle, new ToolStripSeparator(),
-                miLayout, miNumpad, miFnRow, miTheme, miBold, miAutoShow, miSettings, miHelp,
+                miLayout, miNumpad, miFnRow, miTheme, miText, miAutoShow, miSettings, miHelp,
                 new ToolStripSeparator(), miExit,
             });
 
@@ -517,6 +536,8 @@ namespace TecladoFlotante
                 foreach (ToolStripMenuItem i in miTheme.DropDownItems) i.Checked = (string)i.Tag == settings.ThemeMode;
                 miAutoShow.Checked = settings.AutoShow && autoShow.Enabled;
                 miBold.Checked = kb.BoldText;
+                foreach (ToolStripItem i in miText.DropDownItems)
+                    if (i.Tag is int) ((ToolStripMenuItem)i).Checked = (int)i.Tag == kb.TextSize;
                 foreach (ToolStripMenuItem i in miStartup.DropDownItems) i.Checked = (string)i.Tag == settings.StartupMode;
                 miTopMost.Checked = kb.KeyboardTopMost;
                 miBubble.Checked = settings.Bubble;

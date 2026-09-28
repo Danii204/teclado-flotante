@@ -238,6 +238,18 @@ static class Harness
         kb.ShowFnRow = false; Save(kb, dir + "\\light-nofn.png"); kb.ShowFnRow = true;
         Theme.Apply(Theme.Dark); kb.ApplyTheme();
 
+        // Tamaños de letra (normal, grande, muy grande) en claro, a tamaño de tablet
+        Rectangle oldBounds = kb.Bounds;
+        kb.Bounds = new Rectangle(0, 0, 1400, 430);
+        Theme.Apply(Theme.Light); kb.ApplyTheme();
+        for (int size = 0; size < KeyboardForm.TextScales.Length; size++)
+        {
+            kb.TextSize = size;
+            Save(kb, dir + "\\size" + size + ".png");
+        }
+        kb.TextSize = 0; kb.Bounds = oldBounds;
+        Theme.Apply(Theme.Dark); kb.ApplyTheme();
+
         kb.BoldText = true; Save(kb, dir + "\\bold-" + DateTime.Now.Ticks + ".png");
         Theme.Apply(Theme.Light); kb.ApplyTheme(); Save(kb, dir + "\\bold-light-" + DateTime.Now.Ticks + ".png");
         Theme.Apply(Theme.Dark); kb.ApplyTheme(); kb.BoldText = false;

@@ -40,7 +40,7 @@ It installs for the current user only, adds a **Teclado Flotante** shortcut to t
 
 - **Layout:** Spanish (Spain) or English (US).
 - **Theme:** automatic (follows Windows), light or dark.
-- **Bold text** for easier reading.
+- **Text:** three sizes (normal, large, extra large) and bold, for easier reading.
 - **Show when tapping a text field:** the keyboard appears by itself when you tap somewhere you can type.
 - **Numeric keypad** and **function row** (F1–F12) can be hidden; the window adjusts and keys keep their size. Without the function row, Esc moves to the number row.
 - **Options:** always on top, opacity (also with the mouse wheel over the top bar), floating button when minimized, start with Windows, and **what to show at startup** (nothing, the floating button or the keyboard).
