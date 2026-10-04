@@ -2,6 +2,11 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según [SemVer](https://semver.org/lang/es/).
 
+## [1.3.7] - 2026-10-04
+
+### Cambiado
+- El **Intro del bloque numérico** ocupa ahora una sola fila. En el hueco de debajo hay un **cuadro para mover el teclado**: se arrastra con el dedo para colocarlo en cualquier sitio.
+
 ## [1.3.6] - 2026-09-28
 
 ### Añadido

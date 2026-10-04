@@ -4,7 +4,7 @@ using System.Drawing;
 
 namespace TecladoFlotante
 {
-    public enum KeyKind { Char, Vk, Shift, Caps, Ctrl, Alt, AltGr, Win, NumLock }
+    public enum KeyKind { Char, Vk, Shift, Caps, Ctrl, Alt, AltGr, Win, NumLock, Move }
 
     public class KeyDef
     {
@@ -168,7 +168,9 @@ namespace TecladoFlotante
             np(num("1", Input.VK_END, "Fin", false), 4, 0, 1, 1);
             np(num("2", Input.VK_DOWN, "", true), 4, 1, 1, 1);
             np(num("3", 0x22, "AvPág", false), 4, 2, 1, 1);
-            np(vk("numEnter", "", Input.VK_RETURN, true, true), 4, 3, 1, 2);
+            np(vk("numEnter", "", Input.VK_RETURN, true, true), 4, 3, 1, 1);
+            // Debajo del Intro: cuadro para arrastrar y mover el teclado con el dedo
+            np(new KeyDef { Id = "MoveHandle", Kind = KeyKind.Move, Label = "" }, 5, 3, 1, 1);
             np(num("0", 0x2D, "Insert", false), 5, 0, 2, 1);
             np(num(".", Input.VK_DELETE, "Supr", false), 5, 2, 1, 1);
         }

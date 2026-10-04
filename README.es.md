@@ -23,7 +23,7 @@ Se instala solo para tu usuario, crea un acceso directo **Teclado Flotante** en 
 | Acción | Cómo |
 | --- | --- |
 | Mostrar / ocultar | Acceso directo del escritorio, icono de la barra de tareas, botón flotante azul o **Ctrl+Alt+K** |
-| Mover | Arrastra la barra superior o cualquier hueco entre teclas |
+| Mover | Arrastra la barra superior, el cuadro ✥ que hay bajo el Intro del bloque numérico o cualquier hueco entre teclas |
 | Cambiar el tamaño | Arrastra cualquier borde o esquina (se guarda automáticamente) |
 | Siempre encima | Botón 📌 de la barra superior |
 | Menú | Botón ⋯ o clic derecho |

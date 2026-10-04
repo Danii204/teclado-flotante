@@ -25,7 +25,7 @@ It installs for the current user only, adds a **Teclado Flotante** shortcut to t
 | Action | How |
 | --- | --- |
 | Show / hide | Desktop shortcut, taskbar icon, blue floating button or **Ctrl+Alt+K** |
-| Move | Drag the top bar or any gap between keys |
+| Move | Drag the top bar, the ✥ square below the keypad's Enter, or any gap between keys |
 | Resize | Drag any edge or corner (saved automatically) |
 | Always on top | 📌 button on the top bar |
 | Menu | ⋯ button or right-click |

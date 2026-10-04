@@ -375,6 +375,7 @@ namespace TecladoFlotante
             if (b != Button.None) { pressedButton = b; Invalidate(Rectangle.Ceiling(buttons[(int)b])); return; }
 
             KeyDef k = KeyAt(e.Location);
+            if (k != null && k.Kind == KeyKind.Move) { BeginDrag(Drag.Move, 0); return; }
             if (k != null)
             {
                 pressed = k;
@@ -402,6 +403,7 @@ namespace TecladoFlotante
 
             Cursor = CursorFor(EdgesAt(e.Location));
             KeyDef k = KeyAt(e.Location);
+            if (k != null && k.Kind == KeyKind.Move) Cursor = Cursors.SizeAll;
             Button b = ButtonAt(e.Location);
             if (k != hover) { InvalidateKey(hover); hover = k; InvalidateKey(hover); }
             if (b != hoverButton)
@@ -701,6 +703,11 @@ namespace TecladoFlotante
             using (SolidBrush subText = new SolidBrush(Theme.SubText))
             using (SolidBrush altText = new SolidBrush(Theme.AltGrText))
             {
+                if (k.Kind == KeyKind.Move)
+                {
+                    DrawMoveIcon(g, r, subText);
+                    return;
+                }
                 if (k.Kind == KeyKind.Win)
                 {
                     float s = unitH * 0.26f, gp = Math.Max(1f, s * 0.1f), q = (s - gp) / 2;
@@ -755,6 +762,23 @@ namespace TecladoFlotante
                     SizeF sz = g.MeasureString(k.AltGr, af);
                     g.DrawString(k.AltGr, af, altText, r.Right - sz.Width - r.Width * 0.06f, r.Bottom - sz.Height - r.Height * 0.02f);
                 }
+            }
+        }
+
+        /// <summary>Icono de «mover»: cruz con cuatro flechas (dibujado a mano, igual en claro y oscuro).</summary>
+        void DrawMoveIcon(Graphics g, RectangleF r, Brush brush)
+        {
+            float s = Math.Min(r.Width, r.Height) * 0.46f;
+            float cx = r.X + r.Width / 2, cy = r.Y + r.Height / 2, h = s / 2, a = s * 0.2f;
+            Color c = ((SolidBrush)brush).Color;
+            using (Pen p = new Pen(c, Math.Max(1.5f, s * 0.08f)) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
+            {
+                g.DrawLine(p, cx - h, cy, cx + h, cy);
+                g.DrawLine(p, cx, cy - h, cx, cy + h);
+                g.DrawLines(p, new[] { new PointF(cx - a, cy - h + a), new PointF(cx, cy - h), new PointF(cx + a, cy - h + a) });
+                g.DrawLines(p, new[] { new PointF(cx - a, cy + h - a), new PointF(cx, cy + h), new PointF(cx + a, cy + h - a) });
+                g.DrawLines(p, new[] { new PointF(cx - h + a, cy - a), new PointF(cx - h, cy), new PointF(cx - h + a, cy + a) });
+                g.DrawLines(p, new[] { new PointF(cx + h - a, cy - a), new PointF(cx + h, cy), new PointF(cx + h - a, cy + a) });
             }
         }
 

@@ -208,6 +208,18 @@ static class Harness
             k2.Dispose();
         }
 
+        // Bloque numérico: Intro de una sola fila y, debajo, el cuadro para mover el teclado
+        {
+            KeyboardForm k3 = new KeyboardForm();
+            k3.Bounds = new Rectangle(0, 0, 1400, 400);
+            k3.ShowNumpad = true;
+            RectangleF ent = k3.Keys.First(k => k.Id == "numEnter").Rect, three = k3.Keys.First(k => k.Id == "num3").Rect;
+            RectangleF mv = k3.Keys.First(k => k.Id == "MoveHandle").Rect, zero = k3.Keys.First(k => k.Id == "num0").Rect;
+            Check("Intro del bloque numérico de una sola fila", Math.Abs(ent.Height - three.Height) < 1 && Math.Abs(ent.Top - three.Top) < 1, true);
+            Check("cuadro de mover debajo del Intro", Math.Abs(mv.Left - ent.Left) < 1 && Math.Abs(mv.Top - zero.Top) < 1 && Math.Abs(mv.Height - zero.Height) < 1, true);
+            k3.Dispose();
+        }
+
         Check("Unicode de ES correcto (ñ)", KeyLayout.Build("es").Keys.Any(k => k.Id == "ñ"), true);
         Check("EE. UU. sin teclas muertas", KeyLayout.Build("us").DeadKeys.Count, 0);
         return failures - before;
@@ -479,6 +491,14 @@ static class Harness
         Point grip = kb.PointToScreen(new Point(kb.ClientSize.Width / 2, 10));
         DragFromTo(grip, new Point(grip.X + 60, grip.Y + 40));
         Check("mover arrastrando la barra", kb.Location, new Point(loc.X + 60, loc.Y + 40));
+
+        loc = kb.Location;
+        RectangleF mvR = Find(kb, "MoveHandle").Rect;
+        Point handle = kb.PointToScreen(new Point((int)(mvR.X + mvR.Width / 2), (int)(mvR.Y + mvR.Height / 2)));
+        string textBefore = box.Text;
+        DragFromTo(handle, new Point(handle.X - 50, handle.Y - 30));
+        Check("mover arrastrando el cuadro del bloque numérico", kb.Location, new Point(loc.X - 50, loc.Y - 30));
+        Check("el cuadro de mover no escribe nada", box.Text, textBefore);
 
         int w = kb.Width, hgt = kb.Height;
         Point right = kb.PointToScreen(new Point(kb.ClientSize.Width - 2, kb.ClientSize.Height / 2));
