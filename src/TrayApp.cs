@@ -301,8 +301,12 @@ namespace TecladoFlotante
             if (error != null)
             {
                 Log.Error("No se pudo comprobar si hay actualizaciones", error);
+                System.Net.HttpWebResponse resp = error is System.Net.WebException ? ((System.Net.WebException)error).Response as System.Net.HttpWebResponse : null;
+                bool busy = resp != null && ((int)resp.StatusCode == 403 || (int)resp.StatusCode == 429);
                 if (manual) TouchDialog.Info("No se pudo comprobar",
-                    "Revisa la conexión a Internet y vuelve a intentarlo.\n\nDetalle: " + error.Message);
+                    (busy ? "GitHub está recibiendo demasiadas consultas desde esta conexión. No es un fallo del teclado: vuelve a intentarlo dentro de un rato."
+                          : "Revisa la conexión a Internet y vuelve a intentarlo.") +
+                    "\n\nDetalle: " + error.Message);
                 return;
             }
             if (!Updater.IsNewer(r))

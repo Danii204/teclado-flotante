@@ -2,6 +2,12 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según [SemVer](https://semver.org/lang/es/).
 
+## [1.3.8] - 2026-10-05
+
+### Corregido
+- «Buscar actualizaciones» podía fallar con *Error en el servidor remoto: (403) Prohibido*. Era el límite de la API de GitHub (60 consultas por hora sin cuenta, compartidas por toda la red). Ahora se consulta el feed público de versiones, que no tiene ese límite, y la API queda solo como respaldo. La huella SHA-256 se sigue verificando antes de instalar.
+- Si GitHub vuelve a rechazar la consulta, el aviso explica que no es un fallo del teclado y que basta con reintentarlo más tarde.
+
 ## [1.3.7] - 2026-10-04
 
 ### Cambiado

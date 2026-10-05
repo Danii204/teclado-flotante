@@ -40,11 +40,63 @@ namespace TecladoFlotante
 
         /// <summary>
         /// Versión más alta publicada, o null si no hay ninguna utilizable. Lanza excepción si falla la red.
-        /// Las compilaciones del canal beta también tienen en cuenta las «Pre-release»; las estables, no.
+        /// Primero se consulta el feed público de versiones (github.com/…/releases.atom), que no tiene el límite
+        /// de la API (60 consultas/hora por IP sin cuenta: en redes compartidas se agota y devuelve 403).
+        /// Si el feed falla, se usa la API como respaldo.
         /// </summary>
         public static ReleaseInfo GetLatest()
         {
             if (!Enabled) return null;
+            Exception feedError = null;
+            try
+            {
+                ReleaseInfo r = GetLatestFromFeed();
+                if (r != null) return r;
+            }
+            catch (Exception ex) { feedError = ex; }
+
+            try { return GetLatestFromApi(); }
+            catch (Exception)
+            {
+                if (feedError != null) throw feedError;
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Feed Atom de versiones: las etiquetas vX.Y.Z o vX.Y.Z-beta (las de sufijo son «Pre-release»: solo
+        /// para el canal beta). El instalador y su huella se descargan de github.com, no de la API.
+        /// </summary>
+        static ReleaseInfo GetLatestFromFeed()
+        {
+            string atom = GetString("https://github.com/" + BuildInfo.Repo + "/releases.atom", "application/atom+xml");
+            string best = null;
+            Version bestVersion = null;
+            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(
+                         atom, @"<id>tag:github\.com,2008:Repository/\d+/([^<]+)</id>"))
+            {
+                string tag = m.Groups[1].Value;
+                if (tag.Contains("-") && !BuildInfo.IsBeta) continue;
+                Version v = ParseTag(tag);
+                if (v != null && (bestVersion == null || v > bestVersion)) { best = tag; bestVersion = v; }
+            }
+            if (best == null) return null;
+
+            string baseUrl = "https://github.com/" + BuildInfo.Repo + "/releases/download/" + best + "/";
+            ReleaseInfo r = new ReleaseInfo
+            {
+                Version = bestVersion,
+                Tag = best,
+                PageUrl = "https://github.com/" + BuildInfo.Repo + "/releases/tag/" + best,
+                SetupUrl = baseUrl + SetupAssetName,
+            };
+            r.Sha256 = GetString(baseUrl + SetupAssetName + ".sha256", "application/octet-stream")
+                .Trim().Split(' ', '\t', '\r', '\n')[0].ToLowerInvariant();
+            return r.Sha256.Length == 64 ? r : null;
+        }
+
+        static ReleaseInfo GetLatestFromApi()
+        {
             string json;
             try { json = GetString("https://api.github.com/repos/" + BuildInfo.Repo + "/releases?per_page=30", "application/vnd.github+json"); }
             catch (WebException ex)

@@ -37,6 +37,7 @@ static class Harness
             if (args.Length > 0 && args[0] == "dummy") { Dummy(); return 0; }
             if (args.Length > 0 && args[0] == "tray") return TraySmoke();
             if (args.Length > 0 && args[0] == "dialog") return DialogOverKeyboard();
+            if (args.Length > 0 && args[0] == "update") return UpdateCheck();
             if (args.Length > 0 && args[0] == "sleep") { Thread.Sleep(20000); return 0; }
             Unit();
             return E2E(); // devuelve el total de fallos acumulado
@@ -90,6 +91,28 @@ static class Harness
             kb.Close(); kb.Dispose();
             Pump(200);
         }
+        return failures;
+    }
+
+    /// <summary>
+    /// Contra GitHub de verdad (necesita Internet): encuentra la última versión publicada, descarga el
+    /// instalador y verifica su SHA-256. No instala nada.
+    /// </summary>
+    static int UpdateCheck()
+    {
+        ReleaseInfo r = null;
+        string error = "";
+        try { r = Updater.GetLatest(); }
+        catch (Exception ex) { error = ex.Message; }
+        Check("actualizaciones: se encuentra la última versión publicada", error == "" && r != null, true);
+        if (r == null) return failures;
+        Console.WriteLine("  última publicada: " + r.Tag + " (" + r.Version + ")");
+        string path = null;
+        try { path = Updater.Download(r); }
+        catch (Exception ex) { error = ex.Message; }
+        Check("actualizaciones: el instalador se descarga y su SHA-256 coincide", error, "");
+        if (path != null) Console.WriteLine("  descargado y verificado: " + new System.IO.FileInfo(path).Length + " bytes");
+        Updater.CleanupDownloads();
         return failures;
     }
 
