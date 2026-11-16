@@ -23,7 +23,7 @@ namespace TecladoFlotante
         readonly System.Windows.Forms.Timer updateTimer = new System.Windows.Forms.Timer();
         readonly AutoShow autoShow;
         ToolStripMenuItem miTheme, miBold, miText, miAutoShow, miStartup;
-        ToolStripMenuItem miUpdate, miToggle, miTopMost, miNumpad, miFnRow, miBubble, miRemember, miAutostart, miAutoUpdate, miOpacity, miLayout, miCheckNow;
+        ToolStripMenuItem miUpdate, miToggle, miTopMost, miNumpad, miNumpadOnly, miFnRow, miBubble, miRemember, miAutostart, miAutoUpdate, miOpacity, miLayout, miCheckNow;
         ReleaseInfo availableUpdate;
         bool updating, hotkeyOk, exiting;
 
@@ -40,7 +40,7 @@ namespace TecladoFlotante
             kb = new KeyboardForm();
             kb.ApplyTheme();
             MigrateFromV10();
-            kb.Configure(settings.Layout, settings.Numpad, settings.FnRow);
+            kb.Configure(settings.Layout, settings.Numpad, settings.FnRow, settings.NumpadOnly);
             kb.Bounds = StartBounds(crashed || recovered);
             kb.KeyboardTopMost = settings.TopMost;
             kb.Opacity = settings.Opacity / 100.0;
@@ -55,6 +55,7 @@ namespace TecladoFlotante
             kb.MinimizeRequested += delegate { HideKeyboard(); };
             kb.TopMostToggled += delegate { SaveState(); };
             kb.BoundsCommitted += delegate { SaveState(); };
+            kb.ModeChanged += delegate { SaveState(); };
             kb.MenuRequested += (s, e) => menu.Show(e.Point);
             kb.UpdateRequested += delegate { PromptUpdate(); };
 
@@ -126,7 +127,7 @@ namespace TecladoFlotante
         /// </summary>
         Rectangle StartBounds(bool afterFailure)
         {
-            Size size = settings.KeyboardSize.IsEmpty ? Settings.DefaultKeyboardSize(settings.Numpad, settings.FnRow) : settings.KeyboardSize;
+            Size size = settings.KeyboardSize.IsEmpty ? Settings.DefaultKeyboardSize(settings.Numpad, settings.FnRow, settings.NumpadOnly) : settings.KeyboardSize;
             if (settings.RememberPosition && !afterFailure && settings.KeyboardPos.X != int.MinValue)
             {
                 Rectangle r = new Rectangle(settings.KeyboardPos, size);
@@ -151,6 +152,7 @@ namespace TecladoFlotante
             settings.Opacity = (int)Math.Round(kb.Opacity * 100);
             settings.Numpad = kb.ShowNumpad;
             settings.FnRow = kb.ShowFnRow;
+            settings.NumpadOnly = kb.NumpadOnly;
             settings.Layout = kb.LayoutId;
             settings.Save();
         }
@@ -409,6 +411,7 @@ namespace TecladoFlotante
             }
 
             miNumpad = new ToolStripMenuItem("Bloque numérico", null, delegate { kb.ShowNumpad = !kb.ShowNumpad; SaveState(); });
+            miNumpadOnly = new ToolStripMenuItem("Solo bloque numérico", null, delegate { kb.NumpadOnly = !kb.NumpadOnly; SaveState(); });
             miFnRow = new ToolStripMenuItem("Fila de funciones (F1–F12)", null, delegate { kb.ShowFnRow = !kb.ShowFnRow; SaveState(); });
             miTheme = new ToolStripMenuItem("Tema");
             foreach (string[] option in new[] { new[] { Theme.Auto, "Automático (como Windows)" }, new[] { Theme.Light, "Claro" }, new[] { Theme.Dark, "Oscuro" } })
@@ -484,7 +487,7 @@ namespace TecladoFlotante
             });
             ToolStripMenuItem miReset = new ToolStripMenuItem("Restablecer posición y tamaño", null, delegate
             {
-                kb.Bounds = Settings.Centered(Settings.DefaultKeyboardSize(kb.ShowNumpad, kb.ShowFnRow));
+                kb.Bounds = Settings.Centered(Settings.DefaultKeyboardSize(kb.ShowNumpad, kb.ShowFnRow, kb.NumpadOnly));
                 settings.BubblePos = new Point(int.MinValue, int.MinValue);
                 SaveState();
                 ShowKeyboard();
@@ -526,7 +529,7 @@ namespace TecladoFlotante
             m.Items.AddRange(new ToolStripItem[]
             {
                 miUpdate, miToggle, new ToolStripSeparator(),
-                miLayout, miNumpad, miFnRow, miTheme, miText, miAutoShow, miSettings, miHelp,
+                miLayout, miNumpad, miNumpadOnly, miFnRow, miTheme, miText, miAutoShow, miSettings, miHelp,
                 new ToolStripSeparator(), miExit,
             });
 
@@ -536,6 +539,8 @@ namespace TecladoFlotante
                 miToggle.ShortcutKeyDisplayString = hotkeyOk ? "Ctrl+Alt+K" : "";
                 foreach (ToolStripMenuItem i in miLayout.DropDownItems) i.Checked = (string)i.Tag == kb.LayoutId;
                 miNumpad.Checked = kb.ShowNumpad;
+                miNumpad.Enabled = !kb.NumpadOnly;   // en «solo bloque numérico» no aplica
+                miNumpadOnly.Checked = kb.NumpadOnly;
                 miFnRow.Checked = kb.ShowFnRow;
                 foreach (ToolStripMenuItem i in miTheme.DropDownItems) i.Checked = (string)i.Tag == settings.ThemeMode;
                 miAutoShow.Checked = settings.AutoShow && autoShow.Enabled;

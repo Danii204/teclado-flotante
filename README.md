@@ -25,7 +25,8 @@ It installs for the current user only, adds a **Teclado Flotante** shortcut to t
 | Action | How |
 | --- | --- |
 | Show / hide | Desktop shortcut, taskbar icon, blue floating button or **Ctrl+Alt+K** |
-| Move | Drag the top bar, the ✥ square below the keypad's Enter, or any gap between keys |
+| Move | Drag the top bar, the ✥ handle (under keypad Enter or next to ← without numpad), or any gap between keys |
+| Modes | Mode buttons on the top bar (full, compact without numpad, or numpad only) or via the ⋯ menu |
 | Resize | Drag any edge or corner (saved automatically) |
 | Always on top | 📌 button on the top bar |
 | Menu | ⋯ button or right-click |
@@ -42,7 +43,7 @@ It installs for the current user only, adds a **Teclado Flotante** shortcut to t
 - **Theme:** automatic (follows Windows), light or dark.
 - **Text:** three sizes (normal, large, extra large) and bold, for easier reading.
 - **Show when tapping a text field:** the keyboard appears by itself when you tap somewhere you can type.
-- **Numeric keypad** and **function row** (F1–F12) can be hidden; the window adjusts and keys keep their size. Without the function row, Esc moves to the number row.
+- **Modes:** full keyboard, compact without numeric keypad, or **numpad only** (window shrinks to the numeric block keeping the right edge). Switchable with a single tap from the top bar or via the menu. The **function row** (F1–F12) can also be hidden; without it, Esc moves to the number row.
 - **Options:** always on top, opacity (also with the mouse wheel over the top bar), floating button when minimized, start with Windows, and **what to show at startup** (nothing, the floating button or the keyboard).
 - **Remember position after restart.** By default, every time the app starts the keyboard appears **centered** with the **size you saved**, so it is always visible whatever happened.
 

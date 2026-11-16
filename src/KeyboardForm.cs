@@ -49,6 +49,7 @@ namespace TecladoFlotante
         bool numLock = true;
         bool showNumpad = true;
         bool showFnRow = true;
+        bool numpadOnly;   // modo «solo bloque numérico»
         bool boldText;
         string pending; // tecla muerta pendiente (´ ` ^ ¨)
 
@@ -59,6 +60,11 @@ namespace TecladoFlotante
         string updateLabel;
         bool updatePressed;
         readonly RectangleF[] buttons = new RectangleF[3];
+        // Botones de modo junto al ⋯: 0 = teclado completo, 1 = sin bloque numérico, 2 = solo bloque numérico.
+        // Vacío = no se muestra (en una ventana estrecha se oculta el del modo activo).
+        readonly RectangleF[] modeButtons = new RectangleF[3];
+        int pressedMode = -1, hoverMode = -1;
+        public event EventHandler ModeChanged;
         float unitH;
         int pad, edge;
 
@@ -152,29 +158,54 @@ namespace TecladoFlotante
         public string LayoutId
         {
             get { return layout.Id; }
-            set { Configure(value, showNumpad, showFnRow); }
+            set { Configure(value, showNumpad, showFnRow, numpadOnly); }
         }
 
         public bool ShowNumpad
         {
             get { return showNumpad; }
-            set { Configure(layout.Id, value, showFnRow); }
+            set { Configure(layout.Id, value, showFnRow, numpadOnly); }
         }
 
         public bool ShowFnRow
         {
             get { return showFnRow; }
-            set { Configure(layout.Id, showNumpad, value); }
+            set { Configure(layout.Id, showNumpad, value, numpadOnly); }
         }
+
+        /// <summary>Modo «solo bloque numérico»: se oculta el bloque principal y la ventana se estrecha.</summary>
+        public bool NumpadOnly
+        {
+            get { return numpadOnly; }
+            set { Configure(layout.Id, showNumpad, showFnRow, value); }
+        }
+
+        /// <summary>Modo actual: 0 = teclado completo, 1 = sin bloque numérico, 2 = solo bloque numérico.</summary>
+        public int Mode { get { return numpadOnly ? 2 : showNumpad ? 0 : 1; } }
+
+        /// <summary>Cambia de modo de una vez (un solo redimensionado) y avisa para guardar.</summary>
+        public void SetMode(int mode)
+        {
+            if (mode == Mode) return;
+            if (mode == 2) Configure(layout.Id, showNumpad, showFnRow, true);
+            else Configure(layout.Id, mode == 0, showFnRow, false);
+            if (ModeChanged != null) ModeChanged(this, EventArgs.Empty);
+        }
+
+        float stripFree; // borde izquierdo del primer botón de la barra (el asa se centra antes)
+
+        static Size MinSizeFor(bool numpadOnly) { return numpadOnly ? new Size(170, 150) : new Size(380, 150); }
 
         /// <summary>
         /// Cambia la distribución y los bloques visibles. Si aparece o desaparece un bloque, la ventana
         /// crece o encoge para que las teclas conserven su tamaño (sin salirse de la pantalla).
         /// </summary>
-        public void Configure(string layoutId, bool numpad, bool fnRow)
+        public void Configure(string layoutId, bool numpad, bool fnRow, bool onlyNumpad)
         {
-            bool resize = IsHandleCreated && contentW > 0 && (numpad != showNumpad || fnRow != showFnRow);
-            float fx = KeyLayout.Columns(numpad) / KeyLayout.Columns(showNumpad);
+            bool modeChanged = onlyNumpad != numpadOnly;
+            bool resize = IsHandleCreated && contentW > 0 &&
+                          (modeChanged || (!onlyNumpad && numpad != showNumpad) || fnRow != showFnRow);
+            float fx = KeyLayout.Columns(numpad, onlyNumpad) / KeyLayout.Columns(showNumpad, numpadOnly);
             float fy = KeyLayout.Rows(fnRow) / KeyLayout.Rows(showFnRow);
             float cw = contentW, ch = contentH;
 
@@ -187,18 +218,26 @@ namespace TecladoFlotante
             }
             showNumpad = numpad;
             showFnRow = fnRow;
+            numpadOnly = onlyNumpad;
+            if (modeChanged) { EndInteraction(); hover = null; }
 
+            Size min = MinSizeFor(onlyNumpad);
             if (resize)
             {
                 Rectangle wa = Screen.FromControl(this).WorkingArea;
                 int w = Width - (int)Math.Round(cw) + (int)Math.Round(cw * fx);
                 int h = Height - (int)Math.Round(ch) + (int)Math.Round(ch * fy);
-                w = Math.Max(MinimumSize.Width, Math.Min(w, wa.Width));
-                h = Math.Max(MinimumSize.Height, Math.Min(h, wa.Height));
-                int x = Math.Max(wa.Left, Math.Min(Left, wa.Right - w));
+                w = Math.Max(min.Width, Math.Min(w, wa.Width));
+                h = Math.Max(min.Height, Math.Min(h, wa.Height));
+                // Al entrar o salir del modo «solo bloque numérico» se conserva el borde derecho:
+                // el bloque numérico se queda donde estaba
+                int left = modeChanged ? Right - w : Left;
+                int x = Math.Max(wa.Left, Math.Min(left, wa.Right - w));
                 int y = Math.Max(wa.Top, Math.Min(Top, wa.Bottom - h));
+                MinimumSize = Size.Empty; // que el mínimo del modo anterior no estorbe al nuevo tamaño
                 Bounds = new Rectangle(x, y, w, h);
             }
+            MinimumSize = min;
             DoLayout();
             Invalidate();
             if (resize && BoundsCommitted != null) BoundsCommitted(this, EventArgs.Empty);
@@ -280,23 +319,53 @@ namespace TecladoFlotante
             for (int i = 0; i < buttons.Length; i++)
                 buttons[i] = new RectangleF(strip.Right - (buttons.Length - i) * bw, strip.Y, bw, stripH);
 
+            // Botones de modo a la izquierda del ⋯. Si no caben los tres, se quita el del modo activo
+            // (los otros dos bastan para cambiar); si tampoco caben, solo queda el menú.
+            // (con uno solo, el de volver al teclado completo)
+            float mbw = stripH * 1.7f, mgap = 6 * scale;
+            float uw = Math.Min(stripH * 6.5f, strip.Width * 0.3f);
+            float room = buttons[0].Left - mgap - strip.X - stripH * 0.6f; // deja algo de barra para arrastrar
+            if (updateLabel != null) room -= uw + 6 * scale;               // «Actualizar» tiene prioridad
+            int current = Mode;
+            int shown = 3 * mbw <= room ? 3 : 2 * mbw <= room ? 2 : mbw <= room && current != 0 ? 1 : 0;
+            float mx = buttons[0].Left - mgap;
+            for (int i = modeButtons.Length - 1; i >= 0; i--)
+            {
+                if (shown == 0 || (shown < 3 && i == current) || (shown == 1 && i != 0)) { modeButtons[i] = RectangleF.Empty; continue; }
+                mx -= mbw;
+                modeButtons[i] = new RectangleF(mx, strip.Y, mbw, stripH);
+            }
+            stripFree = shown == 0 ? buttons[0].Left : mx;
+
             if (updateLabel != null)
             {
-                float uw = Math.Min(stripH * 6.5f, strip.Width * 0.3f);
-                updateButton = new RectangleF(buttons[0].Left - uw - 6 * scale, strip.Y + 1, uw, stripH - 2);
+                updateButton = new RectangleF(stripFree - uw - 6 * scale, strip.Y + 1, uw, stripH - 2);
+                stripFree = updateButton.Left;
             }
             else updateButton = RectangleF.Empty;
 
             RectangleF content = new RectangleF(pad, strip.Bottom + 1, cs.Width - 2 * pad, cs.Height - pad - strip.Bottom - 1);
             contentW = content.Width;
             contentH = content.Height;
-            float unitW = content.Width / KeyLayout.Columns(showNumpad);
+            float unitW = content.Width / KeyLayout.Columns(showNumpad, numpadOnly);
             unitH = content.Height / KeyLayout.Rows(showFnRow);
             float gap = Math.Max(2f, Math.Min(unitW, unitH) * 0.075f);
+            bool numpadVisible = showNumpad || numpadOnly;
             foreach (KeyDef k in Keys)
             {
                 int row = k.Row;
                 float kx = k.X, kw = k.W, kh = KeyLayout.RowHeight(k);
+                if (numpadOnly && !k.Numpad) { k.Rect = RectangleF.Empty; continue; }
+                if (k.OnlyWithoutNumpad && numpadVisible) { k.Rect = RectangleF.Empty; continue; }
+                if (numpadOnly) kx -= KeyLayout.NumpadLeft;
+                if (!numpadVisible && k.Row == 5)
+                {
+                    // Sin bloque numérico, la fila de abajo deja sitio al cuadro de mover (a la izquierda de ←):
+                    // el espacio pierde 0,75 unidades y el Ctrl derecho 0,25
+                    if (k.Id == "Space") kw -= 0.75f;
+                    else if (k.Id == "AltGr" || k.Id == "AltR") kx -= 0.75f;
+                    else if (k.Id == "CtrlR") { kx -= 0.75f; kw -= 0.25f; }
+                }
                 if (!showFnRow && !k.Numpad)
                 {
                     // Sin fila de funciones, Esc pasa a la izquierda de la fila de números (tamaño normal):
@@ -308,7 +377,7 @@ namespace TecladoFlotante
                         else { kx = 1 + k.X * 12.5f / 13f; kw = k.W * 12.5f / 13f; }
                     }
                 }
-                if ((k.Numpad && !showNumpad) || (row == 0 && !showFnRow)) { k.Rect = RectangleF.Empty; continue; }
+                if ((k.Numpad && !numpadVisible) || (row == 0 && !showFnRow)) { k.Rect = RectangleF.Empty; continue; }
                 float y = content.Y + KeyLayout.RowTop(row, showFnRow) * unitH;
                 k.Rect = new RectangleF(content.X + kx * unitW + gap / 2, y + gap / 2, kw * unitW - gap, kh * unitH - gap);
             }
@@ -318,6 +387,17 @@ namespace TecladoFlotante
         {
             foreach (KeyDef k in Keys) if (k.Rect.Contains(p)) return k;
             return null;
+        }
+
+        int ModeAt(Point p)
+        {
+            for (int i = 0; i < modeButtons.Length; i++) if (!modeButtons[i].IsEmpty && modeButtons[i].Contains(p)) return i;
+            return -1;
+        }
+
+        void InvalidateMode(int i)
+        {
+            if (i >= 0 && !modeButtons[i].IsEmpty) Invalidate(Rectangle.Inflate(Rectangle.Ceiling(modeButtons[i]), 1, 1));
         }
 
         Button ButtonAt(Point p)
@@ -371,6 +451,9 @@ namespace TecladoFlotante
                 return;
             }
 
+            int mode = ModeAt(e.Location);
+            if (mode >= 0) { pressedMode = mode; InvalidateMode(mode); return; }
+
             Button b = ButtonAt(e.Location);
             if (b != Button.None) { pressedButton = b; Invalidate(Rectangle.Ceiling(buttons[(int)b])); return; }
 
@@ -405,6 +488,8 @@ namespace TecladoFlotante
             KeyDef k = KeyAt(e.Location);
             if (k != null && k.Kind == KeyKind.Move) Cursor = Cursors.SizeAll;
             Button b = ButtonAt(e.Location);
+            int m = ModeAt(e.Location);
+            if (m != hoverMode) { InvalidateMode(hoverMode); hoverMode = m; InvalidateMode(m); }
             if (k != hover) { InvalidateKey(hover); hover = k; InvalidateKey(hover); }
             if (b != hoverButton)
             {
@@ -439,7 +524,9 @@ namespace TecladoFlotante
             if (e.Button != MouseButtons.Left) return;
             Button clicked = pressedButton != Button.None && ButtonAt(e.Location) == pressedButton ? pressedButton : Button.None;
             bool updateClicked = updatePressed && updateButton.Contains(e.Location);
+            int modeClicked = pressedMode >= 0 && ModeAt(e.Location) == pressedMode ? pressedMode : -1;
             EndInteraction();
+            if (modeClicked >= 0) { SetMode(modeClicked); return; }
             if (updateClicked && UpdateRequested != null) { UpdateRequested(this, EventArgs.Empty); return; }
             switch (clicked)
             {
@@ -468,6 +555,8 @@ namespace TecladoFlotante
             hover = null;
             if (hoverButton != Button.None) Invalidate(Rectangle.Ceiling(buttons[(int)hoverButton]));
             hoverButton = Button.None;
+            InvalidateMode(hoverMode);
+            hoverMode = -1;
         }
 
         protected override void OnMouseCaptureChanged(EventArgs e)
@@ -493,6 +582,7 @@ namespace TecladoFlotante
             Cursor = Cursors.Default;
             if (pressed != null) { InvalidateKey(pressed); pressed = null; }
             if (pressedButton != Button.None) { Invalidate(Rectangle.Ceiling(buttons[(int)pressedButton])); pressedButton = Button.None; }
+            if (pressedMode >= 0) { InvalidateMode(pressedMode); pressedMode = -1; }
             if (updatePressed) { updatePressed = false; Invalidate(Rectangle.Ceiling(updateButton)); }
             if (committed && BoundsCommitted != null) BoundsCommitted(this, EventArgs.Empty);
         }
@@ -655,7 +745,11 @@ namespace TecladoFlotante
         {
             // asa de arrastre centrada
             float gw = Math.Min(48 * scale, strip.Width * 0.12f), gh = Math.Max(3f, 4 * scale);
-            RectangleF grip = new RectangleF(strip.X + (strip.Width - gw) / 2, strip.Y + (strip.Height - gh) / 2, gw, gh);
+            float gx = strip.X + (strip.Width - gw) / 2;
+            // En una ventana estrecha (solo bloque numérico) los botones taparían el asa: se centra en el hueco libre
+            float free = stripFree - 4 * scale;
+            if (gx + gw > free) gx = strip.X + (free - strip.X - gw) / 2;
+            RectangleF grip = new RectangleF(gx, strip.Y + (strip.Height - gh) / 2, gw, gh);
             using (GraphicsPath p = Theme.RoundRect(grip, gh / 2))
             using (SolidBrush b = new SolidBrush(Theme.Grip))
                 g.FillPath(b, p);
@@ -669,6 +763,8 @@ namespace TecladoFlotante
                     DrawFitted(g, updateLabel, Theme.TextFamily, updateButton.Height * 0.55f, tb,
                                RectangleF.Inflate(updateButton, -updateButton.Height * 0.3f, 0));
             }
+
+            DrawModeButtons(g);
 
             string[] glyphs = { "", topMost ? "" : "", "" };
             Font f = fonts.Get(Theme.IconFamily, strip.Height * 0.48f, FontStyle.Regular);
@@ -761,6 +857,46 @@ namespace TecladoFlotante
                     Font af = fonts.Get(Theme.TextFamily, sub, TextStyle);
                     SizeF sz = g.MeasureString(k.AltGr, af);
                     g.DrawString(k.AltGr, af, altText, r.Right - sz.Width - r.Width * 0.06f, r.Bottom - sz.Height - r.Height * 0.02f);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Botones de modo: dibujos esquemáticos (teclado ancho con barra espaciadora, bloque numérico con
+        /// su cuadrícula). El del modo activo va resaltado como una tecla enclavada.
+        /// </summary>
+        void DrawModeButtons(Graphics g)
+        {
+            int current = Mode;
+            for (int i = 0; i < modeButtons.Length; i++)
+            {
+                RectangleF r = modeButtons[i];
+                if (r.IsEmpty) continue;
+                bool active = i == current, down = i == pressedMode;
+                Color back = down ? Theme.Accent : active ? Theme.Latched : i == hoverMode ? Theme.KeyHover : Theme.KeySpecial;
+                using (GraphicsPath p = Theme.RoundRect(RectangleF.Inflate(r, -1.5f, -1), 4 * scale))
+                using (SolidBrush b = new SolidBrush(back))
+                    g.FillPath(b, p);
+
+                Color ink = down ? Theme.OnAccent : active ? Theme.Text : Theme.SubText;
+                float ih = r.Height * 0.5f, unit = ih / 5f;            // 5 filas de teclas de alto
+                float mainW = unit * 9f, padW = unit * 3.2f, sep = unit * 0.9f;
+                float iw = i == 0 ? mainW + sep + padW : i == 1 ? mainW : padW;
+                float x = r.X + (r.Width - iw) / 2, y = r.Y + (r.Height - ih) / 2;
+                using (Pen pen = new Pen(ink, Math.Max(1.2f, ih * 0.11f)) { LineJoin = LineJoin.Round, StartCap = LineCap.Round, EndCap = LineCap.Round })
+                {
+                    if (i != 2)
+                    {
+                        using (GraphicsPath p = Theme.RoundRect(new RectangleF(x, y, mainW, ih), unit * 0.6f)) g.DrawPath(pen, p);
+                        g.DrawLine(pen, x + mainW * 0.3f, y + ih * 0.7f, x + mainW * 0.7f, y + ih * 0.7f); // barra espaciadora
+                        x += mainW + sep;
+                    }
+                    if (i != 1)
+                    {
+                        using (GraphicsPath p = Theme.RoundRect(new RectangleF(x, y, padW, ih), unit * 0.6f)) g.DrawPath(pen, p);
+                        g.DrawLine(pen, x + padW / 2, y + ih * 0.3f, x + padW / 2, y + ih * 0.7f);
+                        g.DrawLine(pen, x + padW * 0.3f, y + ih / 2, x + padW * 0.7f, y + ih / 2);
+                    }
                 }
             }
         }

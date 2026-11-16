@@ -19,6 +19,7 @@ namespace TecladoFlotante
         public float X, W;
         public RectangleF Rect;
         public bool Numpad;                      // pertenece al bloque numérico
+        public bool OnlyWithoutNumpad;           // solo se ve cuando el bloque numérico está oculto
         public ushort NavVk;                     // con Bloq Num desactivado (7 = Inicio, 8 = ↑...)
         public string NavLabel;
 
@@ -49,6 +50,9 @@ namespace TecladoFlotante
         public static readonly string[] Ids = { "es", "us" };
 
         public static float Columns(bool numpad) { return numpad ? MainColumns + NumpadGap + NumpadColumns : MainColumns; }
+        public static float Columns(bool numpad, bool numpadOnly) { return numpadOnly ? NumpadColumns : Columns(numpad); }
+        /// <summary>Dónde empieza el bloque numérico en el teclado completo.</summary>
+        public const float NumpadLeft = MainColumns + NumpadGap;
         public static float Rows(bool fnRow) { return fnRow ? 5 + FnRowHeight : 5; }
         public static float RowTop(int row, bool fnRow) { return row == 0 ? 0 : (fnRow ? FnRowHeight : 0) + (row - 1); }
         public static float RowHeight(KeyDef k) { return k.Row == 0 ? FnRowHeight : k.RowSpan; }
@@ -131,6 +135,11 @@ namespace TecladoFlotante
             b.Vk("Left", "", Input.VK_LEFT, true, true, 1);
             b.Vk("Down", "", Input.VK_DOWN, true, true, 1);
             b.Vk("Right", "", Input.VK_RIGHT, true, true, 1);
+
+            // Sin bloque numérico, cuadro para mover el teclado a la izquierda de ←: el espacio y el
+            // Ctrl derecho se estrechan para dejarle sitio (ver KeyboardForm.DoLayout)
+            KeyDef move = b.Mod("MoveMain", "", KeyKind.Move, false, 1);
+            move.X = 11; move.OnlyWithoutNumpad = true;
         }
 
         static void EnterKey(Builder b)

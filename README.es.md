@@ -23,7 +23,8 @@ Se instala solo para tu usuario, crea un acceso directo **Teclado Flotante** en 
 | Acción | Cómo |
 | --- | --- |
 | Mostrar / ocultar | Acceso directo del escritorio, icono de la barra de tareas, botón flotante azul o **Ctrl+Alt+K** |
-| Mover | Arrastra la barra superior, el cuadro ✥ que hay bajo el Intro del bloque numérico o cualquier hueco entre teclas |
+| Mover | Arrastra la barra superior, el cuadro ✥ (bajo el Intro numérico o a la izquierda de ←) o cualquier hueco entre teclas |
+| Modos | Botones de la barra superior (completo, sin bloque o solo numérico) o en el menú ⋯ |
 | Cambiar el tamaño | Arrastra cualquier borde o esquina (se guarda automáticamente) |
 | Siempre encima | Botón 📌 de la barra superior |
 | Menú | Botón ⋯ o clic derecho |
@@ -40,7 +41,7 @@ Se instala solo para tu usuario, crea un acceso directo **Teclado Flotante** en 
 - **Tema:** automático (sigue al tema de Windows), claro u oscuro.
 - **Letra:** tres tamaños (normal, grande y muy grande) y negrita, para leer mejor las teclas.
 - **Mostrar al tocar un campo de texto:** si está activado, al hacer clic o tocar donde se puede escribir, el teclado aparece solo.
-- **Bloque numérico** y **fila de funciones** (F1–F12): se pueden ocultar; la ventana se ajusta y las teclas mantienen su tamaño. Sin la fila de funciones, Esc pasa a la fila de los números.
+- **Modos:** teclado completo, sin bloque numérico o **solo bloque numérico** (la ventana se estrecha al bloque numérico y mantiene el borde derecho). Se cambian con un toque en la barra superior o desde el menú. La **fila de funciones** (F1–F12) también se puede ocultar; sin ella, Esc pasa a la fila de los números.
 - **Opciones:** siempre encima, opacidad (también con la rueda del ratón sobre la barra superior), botón flotante al minimizar, iniciar con Windows y **qué mostrar al encender el PC** (nada, el botón flotante o el teclado).
 - **Recordar la posición al reiniciar.** Por defecto, cada vez que el programa arranca el teclado aparece **centrado** con el **tamaño que tenías guardado**; así, pase lo que pase, al volver a abrirlo siempre está a la vista.
 

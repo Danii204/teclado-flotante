@@ -23,6 +23,7 @@ namespace TecladoFlotante
         public Point BubblePos = new Point(int.MinValue, int.MinValue);
         public bool Numpad = true;
         public bool FnRow = true;
+        public bool NumpadOnly;                       // modo «solo bloque numérico»
         public string Layout = KeyLayout.DefaultId;
         public bool AutoUpdate = true;
         public string ThemeMode = TecladoFlotante.Theme.Auto;   // auto (como Windows) / light / dark
@@ -72,7 +73,7 @@ namespace TecladoFlotante
             }
 
             int w = Int(d, "W", 0), h = Int(d, "H", 0);
-            if (w >= 200 && h >= 80 && w <= 20000 && h <= 20000) s.KeyboardSize = new Size(w, h);
+            if (w >= 150 && h >= 80 && w <= 20000 && h <= 20000) s.KeyboardSize = new Size(w, h);
             s.KeyboardPos = new Point(Int(d, "X", int.MinValue), Int(d, "Y", int.MinValue));
             s.RememberPosition = Int(d, "RememberPosition", 0) != 0;
             s.TopMost = Int(d, "TopMost", 1) != 0;
@@ -82,6 +83,7 @@ namespace TecladoFlotante
             s.NumpadSaved = d.ContainsKey("Numpad");
             s.Numpad = Int(d, "Numpad", 1) != 0;
             s.FnRow = Int(d, "FnRow", 1) != 0;
+            s.NumpadOnly = Int(d, "NumpadOnly", 0) != 0;
             string layout;
             if (d.TryGetValue("Layout", out layout) && Array.IndexOf(KeyLayout.Ids, layout) >= 0) s.Layout = layout;
             s.AutoUpdate = Int(d, "AutoUpdate", 1) != 0;
@@ -118,6 +120,7 @@ namespace TecladoFlotante
                     "BubbleX=" + BubblePos.X, "BubbleY=" + BubblePos.Y,
                     "Numpad=" + B(Numpad),
                     "FnRow=" + B(FnRow),
+                    "NumpadOnly=" + B(NumpadOnly),
                     "Layout=" + Layout,
                     "AutoUpdate=" + B(AutoUpdate),
                     "Theme=" + ThemeMode,
@@ -160,10 +163,10 @@ namespace TecladoFlotante
             return false;
         }
 
-        public static Size DefaultKeyboardSize(bool numpad, bool fnRow)
+        public static Size DefaultKeyboardSize(bool numpad, bool fnRow, bool numpadOnly)
         {
             Rectangle wa = Screen.PrimaryScreen.WorkingArea;
-            float cols = KeyLayout.Columns(numpad);
+            float cols = KeyLayout.Columns(numpad, numpadOnly);
             float widthFactor = cols / KeyLayout.MainColumns;
             int w = (int)Math.Min(wa.Width * 0.62 * widthFactor, 1250 * widthFactor);
             w = Math.Min(w, wa.Width - 24);

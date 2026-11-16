@@ -2,6 +2,16 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según [SemVer](https://semver.org/lang/es/).
 
+## [1.3.9] - 2026-11-16
+
+### Añadido
+- **Botones de modo en la barra superior:** acceso directo con un toque (a la izquierda de ⋯) para alternar entre *Teclado completo*, *Sin bloque numérico* y *Solo bloque numérico*. El modo activo aparece resaltado.
+- Modo **Solo bloque numérico:** oculta el bloque principal y estrecha la ventana manteniendo el borde derecho de la pantalla. Muestra los botones de los otros dos modos para poder volver al teclado completo con un solo toque (y se ocultan automáticamente si aparece el botón de actualización pendiente).
+- Cuadro para **mover el teclado (✥)** a la izquierda de la flecha izquierda (←) cuando el bloque numérico está oculto.
+
+### Cambiado
+- El modo seleccionado se guarda automáticamente y se conserva al reiniciar la aplicación.
+
 ## [1.3.8] - 2026-10-05
 
 ### Corregido

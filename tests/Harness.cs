@@ -193,7 +193,7 @@ static class Harness
             LayoutDef l = KeyLayout.Build(id);
             for (int row = 1; row <= 5; row++)
             {
-                float width = l.Keys.Where(k => !k.Numpad && k.Row == row).Sum(k => k.W);
+                float width = l.Keys.Where(k => !k.Numpad && !k.OnlyWithoutNumpad && k.Row == row).Sum(k => k.W);
                 // el Intro ocupa las filas 2 y 3: en la fila 3 falta su anchura
                 if (row == 3) width += 1.25f;
                 Check("distribución " + id + ": fila " + row + " mide 15 unidades", Math.Abs(width - 15f) < 0.01f, true);
@@ -240,7 +240,48 @@ static class Harness
             RectangleF mv = k3.Keys.First(k => k.Id == "MoveHandle").Rect, zero = k3.Keys.First(k => k.Id == "num0").Rect;
             Check("Intro del bloque numérico de una sola fila", Math.Abs(ent.Height - three.Height) < 1 && Math.Abs(ent.Top - three.Top) < 1, true);
             Check("cuadro de mover debajo del Intro", Math.Abs(mv.Left - ent.Left) < 1 && Math.Abs(mv.Top - zero.Top) < 1 && Math.Abs(mv.Height - zero.Height) < 1, true);
+            Check("con bloque numérico no sale el cuadro de mover de abajo", k3.Keys.First(k => k.Id == "MoveMain").Rect.IsEmpty, true);
             k3.Dispose();
+        }
+
+        // Sin bloque numérico: cuadro de mover a la izquierda de ← sin solaparse con nada
+        foreach (string id in KeyLayout.Ids)
+        {
+            KeyboardForm k4 = new KeyboardForm();
+            k4.Bounds = new Rectangle(0, 0, 1200, 400);
+            k4.LayoutId = id;
+            k4.ShowNumpad = false;
+            RectangleF mv = k4.Keys.First(k => k.Id == "MoveMain").Rect, left = k4.Keys.First(k => k.Id == "Left").Rect;
+            Check("sin bloque numérico (" + id + "): hay cuadro de mover", !mv.IsEmpty && Math.Abs(mv.Top - left.Top) < 1 && Math.Abs(mv.Right - left.Left) < 12, true);
+            List<RectangleF> row5 = k4.Keys.Where(k => k.Row == 5 && !k.Rect.IsEmpty).Select(k => k.Rect).OrderBy(x => x.Left).ToList();
+            bool ok = true;
+            for (int i = 1; i < row5.Count; i++) if (row5[i].Left < row5[i - 1].Right - 0.5f) ok = false;
+            Check("sin bloque numérico (" + id + "): fila de abajo sin solapes", ok, true);
+            k4.Dispose();
+        }
+
+        // Solo bloque numérico: todas sus teclas a la vista y nada del bloque principal; ida y vuelta conserva el tamaño
+        {
+            KeyboardForm k5 = new KeyboardForm();
+            IntPtr h5 = k5.Handle;
+            k5.Bounds = new Rectangle(100, 100, 1400, 400);
+            k5.NumpadOnly = true;
+            Check("solo bloque numérico: sin bloque principal", k5.Keys.Where(k => !k.Numpad).All(k => k.Rect.IsEmpty), true);
+            Check("solo bloque numérico: todas sus teclas", k5.Keys.Where(k => k.Numpad).All(k => !k.Rect.IsEmpty && k5.ClientRectangle.Contains(Rectangle.Round(k.Rect))), true);
+            Check("solo bloque numérico: ventana estrecha", k5.Width < 400, true);
+            Check("solo bloque numérico: mismo borde derecho", Math.Abs(k5.Right - 1500) <= 2, true);
+            Check("solo bloque numérico: hay cuadro de mover", !k5.Keys.First(k => k.Id == "MoveHandle").Rect.IsEmpty, true);
+            k5.NumpadOnly = false;
+            Check("volver al teclado completo: mismo tamaño", Math.Abs(k5.Width - 1400) <= 3 && k5.Height == 400, true);
+            // Botones de modo de la barra: los mismos cambios sin abrir el menú
+            k5.SetMode(1);
+            Check("botón «sin bloque numérico»", !k5.ShowNumpad && !k5.NumpadOnly && k5.Mode == 1, true);
+            k5.SetMode(2);
+            Check("botón «solo bloque numérico»", k5.NumpadOnly && k5.Mode == 2, true);
+            k5.SetMode(0);
+            Check("botón «teclado completo»", k5.ShowNumpad && !k5.NumpadOnly && k5.Mode == 0, true);
+            Check("ida y vuelta por los tres modos: mismo tamaño", Math.Abs(k5.Width - 1400) <= 4 && k5.Height == 400, true);
+            k5.Dispose();
         }
 
         Check("Unicode de ES correcto (ñ)", KeyLayout.Build("es").Keys.Any(k => k.Id == "ñ"), true);
@@ -264,6 +305,10 @@ static class Harness
         kb.Press(Find(kb, "NumLock")); Save(kb, dir + "\\numlockoff.png"); kb.Press(Find(kb, "NumLock"));
         kb.ShowNumpad = false; Save(kb, dir + "\\nonumpad.png"); kb.ShowNumpad = true;
         kb.ShowFnRow = false; Save(kb, dir + "\\nofn.png"); kb.ShowFnRow = true;
+        kb.NumpadOnly = true; Save(kb, dir + "\\numpadonly.png");
+        kb.ShowFnRow = false; Save(kb, dir + "\\numpadonly-nofn.png"); kb.ShowFnRow = true;
+        kb.UpdateLabel = "Actualizar"; Save(kb, dir + "\\numpadonly-update.png"); kb.UpdateLabel = null;
+        kb.NumpadOnly = false;
         kb.LayoutId = "us"; Save(kb, dir + "\\us.png");
         kb.Press(Find(kb, "ShiftL")); Save(kb, dir + "\\us-shift.png"); kb.Press(Find(kb, "ShiftL"));
         kb.LayoutId = "es";
@@ -271,6 +316,8 @@ static class Harness
         kb.Press(Find(kb, "ShiftL")); kb.Press(Find(kb, "Caps")); Save(kb, dir + "\\light-shift.png");
         kb.Press(Find(kb, "ShiftL")); kb.Press(Find(kb, "Caps"));
         kb.ShowFnRow = false; Save(kb, dir + "\\light-nofn.png"); kb.ShowFnRow = true;
+        kb.ShowNumpad = false; Save(kb, dir + "\\light-nonumpad.png"); kb.ShowNumpad = true;
+        kb.NumpadOnly = true; Save(kb, dir + "\\light-numpadonly.png"); kb.NumpadOnly = false;
         Theme.Apply(Theme.Dark); kb.ApplyTheme();
 
         // Tamaños de letra (normal, grande, muy grande) en claro, a tamaño de tablet
