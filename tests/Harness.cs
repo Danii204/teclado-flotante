@@ -264,15 +264,18 @@ static class Harness
         {
             KeyboardForm k5 = new KeyboardForm();
             IntPtr h5 = k5.Handle;
-            k5.Bounds = new Rectangle(100, 100, 1400, 400);
+            Rectangle wa5 = Screen.PrimaryScreen.WorkingArea;
+            int initW = Math.Min(860, wa5.Width - 60), initH = Math.Min(280, wa5.Height - 60);
+            int initX = wa5.Left + 20, initY = wa5.Top + 20, initRight = initX + initW;
+            k5.Bounds = new Rectangle(initX, initY, initW, initH);
             k5.NumpadOnly = true;
             Check("solo bloque numérico: sin bloque principal", k5.Keys.Where(k => !k.Numpad).All(k => k.Rect.IsEmpty), true);
             Check("solo bloque numérico: todas sus teclas", k5.Keys.Where(k => k.Numpad).All(k => !k.Rect.IsEmpty && k5.ClientRectangle.Contains(Rectangle.Round(k.Rect))), true);
             Check("solo bloque numérico: ventana estrecha", k5.Width < 400, true);
-            Check("solo bloque numérico: mismo borde derecho", Math.Abs(k5.Right - 1500) <= 2, true);
+            Check("solo bloque numérico: mismo borde derecho", Math.Abs(k5.Right - initRight) <= 2, true);
             Check("solo bloque numérico: hay cuadro de mover", !k5.Keys.First(k => k.Id == "MoveHandle").Rect.IsEmpty, true);
             k5.NumpadOnly = false;
-            Check("volver al teclado completo: mismo tamaño", Math.Abs(k5.Width - 1400) <= 3 && k5.Height == 400, true);
+            Check("volver al teclado completo: mismo tamaño", Math.Abs(k5.Width - initW) <= 3 && Math.Abs(k5.Height - initH) <= 1, true);
             // Botones de modo de la barra: los mismos cambios sin abrir el menú
             k5.SetMode(1);
             Check("botón «sin bloque numérico»", !k5.ShowNumpad && !k5.NumpadOnly && k5.Mode == 1, true);
@@ -280,7 +283,7 @@ static class Harness
             Check("botón «solo bloque numérico»", k5.NumpadOnly && k5.Mode == 2, true);
             k5.SetMode(0);
             Check("botón «teclado completo»", k5.ShowNumpad && !k5.NumpadOnly && k5.Mode == 0, true);
-            Check("ida y vuelta por los tres modos: mismo tamaño", Math.Abs(k5.Width - 1400) <= 4 && k5.Height == 400, true);
+            Check("ida y vuelta por los tres modos: mismo tamaño", Math.Abs(k5.Width - initW) <= 4 && Math.Abs(k5.Height - initH) <= 1, true);
             k5.Dispose();
         }
 
